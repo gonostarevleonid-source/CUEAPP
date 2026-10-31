@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CueApp.App.Services;
@@ -25,4 +26,7 @@ public interface IDialogService
     Task<string?> PickShowToSaveAsync(string suggestedName);
 
     Task<SaveChangesAnswer> AskSaveChangesAsync(string showName);
+
+    /// <summary>Выбрать аудиофайлы (можно несколько); пустой список — пользователь отменил.</summary>
+    Task<IReadOnlyList<string>> PickAudioFilesAsync();
 }

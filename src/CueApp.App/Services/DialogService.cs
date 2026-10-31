@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -13,6 +14,12 @@ public sealed class DialogService : IDialogService
     private static readonly FilePickerFileType ShowFileType = new("Шоу CUEAPP")
     {
         Patterns = ["*" + ShowFile.Extension],
+    };
+
+    // Форматы, которые BASS читает сам или через системные кодеки (Media Foundation / CoreAudio)
+    private static readonly FilePickerFileType AudioFileType = new("Аудиофайлы")
+    {
+        Patterns = ["*.wav", "*.aif", "*.aiff", "*.mp3", "*.flac", "*.ogg", "*.m4a"],
     };
 
     private readonly Window _owner;
@@ -46,6 +53,18 @@ public sealed class DialogService : IDialogService
         });
 
         return file?.TryGetLocalPath();
+    }
+
+    public async Task<IReadOnlyList<string>> PickAudioFilesAsync()
+    {
+        var files = await _owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Выбрать аудиофайлы",
+            AllowMultiple = true,
+            FileTypeFilter = [AudioFileType],
+        });
+
+        return files.Select(f => f.TryGetLocalPath()).OfType<string>().ToList();
     }
 
     public Task<SaveChangesAnswer> AskSaveChangesAsync(string showName) =>

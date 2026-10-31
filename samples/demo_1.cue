@@ -1,0 +1,100 @@
+{
+  "formatVersion": 1,
+  "name": "Демо-шоу",
+  "settings": {
+    "blockGoWhileTimelinePlaying": false,
+    "groupGo": "runWholeGroup",
+    "panicFadeSeconds": 0.5,
+    "countdownWarningSeconds": 30,
+    "countdownCriticalSeconds": 10,
+    "doubleGoProtectionMs": 300,
+    "goKey": "Space"
+  },
+  "cues": [
+    {
+      "type": "audio",
+      "filePath": "",
+      "trimIn": 0,
+      "trimOut": null,
+      "fadeIn": 0,
+      "fadeOut": 0,
+      "volumeDb": 0,
+      "outputs": [],
+      "playCount": 1,
+      "loopForever": false,
+      "id": "d0b5ab94-fcd5-4c75-955b-67067186f9ad",
+      "number": "1",
+      "name": "Предзвонок 1",
+      "notes": "",
+      "tags": [],
+      "color": "blue",
+      "preWait": 0,
+      "postWait": 0,
+      "continue": "none"
+    },
+    {
+      "type": "audio",
+      "filePath": "",
+      "trimIn": 0,
+      "trimOut": null,
+      "fadeIn": 0,
+      "fadeOut": 0,
+      "volumeDb": 0,
+      "outputs": [],
+      "playCount": 1,
+      "loopForever": true,
+      "id": "12b4e24d-9197-4972-93dd-6d2bc3181bf9",
+      "number": "2",
+      "name": "Фон фойе",
+      "notes": "",
+      "tags": [],
+      "color": "none",
+      "preWait": 0,
+      "postWait": 0,
+      "continue": "none"
+    },
+    {
+      "type": "fade",
+      "targetCueId": "12b4e24d-9197-4972-93dd-6d2bc3181bf9",
+      "duration": 5,
+      "targetVolumeDb": -60,
+      "curve": "linear",
+      "id": "ade1a45b-47b6-4c3a-96bb-632f98676d27",
+      "number": "3",
+      "name": "Фон фойе → тишина",
+      "notes": "",
+      "tags": [],
+      "color": "none",
+      "preWait": 0,
+      "postWait": 0,
+      "continue": "none"
+    },
+    {
+      "type": "group",
+      "children": [
+        {
+          "type": "wait",
+          "duration": 2,
+          "id": "82440d13-b3d1-47bd-ad55-348061883cc6",
+          "number": "4.2",
+          "name": "Пауза перед чайками",
+          "notes": "",
+          "tags": [],
+          "color": "none",
+          "preWait": 0,
+          "postWait": 0,
+          "continue": "autoFollow"
+        }
+      ],
+      "id": "fc2e297e-d5bf-41ea-8384-d180ff7be25e",
+      "number": "4",
+      "name": "Пролог",
+      "notes": "",
+      "tags": [],
+      "color": "purple",
+      "preWait": 0,
+      "postWait": 0,
+      "continue": "none"
+    }
+  ]
+}

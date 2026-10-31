@@ -14,6 +14,9 @@ public sealed class ShowSettings
     /// <summary>Что делает GO на группе и куда после него переходит выбор.</summary>
     public GroupGoMode GroupGo { get; set; } = GroupGoMode.RunWholeGroup;
 
+    /// <summary>Фейд кнопки STOP (остановить всё), сек.</summary>
+    public double StopFadeSeconds { get; set; } = 1;
+
     public double PanicFadeSeconds { get; set; } = 0.5;
 
     // --- Отсчет ---

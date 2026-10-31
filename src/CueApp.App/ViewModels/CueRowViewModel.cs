@@ -3,6 +3,7 @@ using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CueApp.App.Themes;
 using CueApp.Core;
+using CueApp.Core.Audio;
 using CueApp.Core.Model;
 
 namespace CueApp.App.ViewModels;
@@ -29,6 +30,26 @@ public partial class CueRowViewModel : ViewModelBase
     /// <summary>Выбранная кью (уйдет по GO): белая обводка + зеленая полоска.</summary>
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
+
+    /// <summary>Играет сейчас: синий фон + синяя полоска.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RowBackground))]
+    public partial bool IsPlaying { get; set; }
+
+    /// <summary>Длина аудиофайла, сек (null — еще не известна или это не Audio).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Duration))]
+    public partial double? FileDuration { get; set; }
+
+    /// <summary>Файл не найден или не читается.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Duration))]
+    public partial bool IsMissingFile { get; set; }
+
+    /// <summary>Живой отсчет во время игры («−0:21.0», «∞ 12:41.3»); null — не играет.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Duration))]
+    public partial string? LiveTime { get; set; }
 
     public bool IsSubCue => Depth > 0;
 
@@ -62,10 +83,14 @@ public partial class CueRowViewModel : ViewModelBase
 
     public string PostWait => TimeFormat.MinSecTenths(Cue.PostWait);
 
-    /// <summary>Длительность. У Audio она станет известна, когда подключим чтение файла.</summary>
-    public string Duration => Cue switch
+    /// <summary>Колонка «Длит.»: во время игры — отсчет, иначе полная длительность с учетом trim и повторов.</summary>
+    public string Duration => LiveTime ?? (IsMissingFile ? "нет файла" : StaticDuration);
+
+    private string StaticDuration => Cue switch
     {
         AudioCue { LoopForever: true } => "∞",
+        AudioCue audio when FileDuration is { } file =>
+            TimeFormat.MinSecTenths(AudioTiming.TotalLength(audio, file) ?? 0),
         FadeCue fade => TimeFormat.MinSecTenths(fade.Duration),
         StopCue stop => TimeFormat.MinSecTenths(stop.FadeOut),
         WaitCue wait => TimeFormat.MinSecTenths(wait.Duration),
@@ -78,8 +103,10 @@ public partial class CueRowViewModel : ViewModelBase
     /// <summary>Значок ↓ с чертой — auto-follow (после окончания кью).</summary>
     public bool IsAutoFollow => Cue.Continue == ContinueMode.AutoFollow;
 
-    /// <summary>Заливка строки: цвет кью, иначе чуть более светлый фон подкью, иначе прозрачно.</summary>
-    public IBrush RowBackground => Cue.Color switch
+    /// <summary>
+    /// Заливка строки: играющая — синий фон; иначе цвет кью; иначе чуть более светлый фон подкью; иначе прозрачно.
+    /// </summary>
+    public IBrush RowBackground => IsPlaying ? ThemeBrushes.Get("PlayingBackgroundBrush") : Cue.Color switch
     {
         CueColor.Red => ThemeBrushes.Get("FillRedBrush"),
         CueColor.Orange => ThemeBrushes.Get("FillOrangeBrush"),

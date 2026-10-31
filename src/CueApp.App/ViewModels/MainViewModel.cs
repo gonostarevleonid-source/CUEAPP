@@ -14,6 +14,9 @@ using CueApp.Core.Playback;
 
 namespace CueApp.App.ViewModels;
 
+/// <summary>
+/// Главное окно: шоу, кью-лист, файл. Всё про проигрывание — в MainViewModel.Playback.cs.
+/// </summary>
 public partial class MainViewModel : ViewModelBase
 {
     private const string UntitledName = "Без названия";
@@ -25,6 +28,9 @@ public partial class MainViewModel : ViewModelBase
 
     // Монотонные часы для защиты от двойного GO (не зависят от перевода системного времени)
     private readonly Stopwatch _clock = Stopwatch.StartNew();
+
+    // Строка списка для каждой кью — чтобы быстро обновлять отсчет играющих
+    private readonly Dictionary<Cue, CueRowViewModel> _rowByCue = new();
 
     public Show Show { get; private set; }
 
@@ -58,6 +64,9 @@ public partial class MainViewModel : ViewModelBase
 
     public string CueCountText => Rows.Count + " кью";
 
+    /// <summary>Папка шоу — от нее считаются относительные пути к звукам; null — шоу не сохранено.</summary>
+    private string? ShowDirectory => FilePath is null ? null : Path.GetDirectoryName(FilePath);
+
     partial void OnSelectedRowChanged(CueRowViewModel? oldValue, CueRowViewModel? newValue)
     {
         if (oldValue is not null)
@@ -75,6 +84,7 @@ public partial class MainViewModel : ViewModelBase
         _dialogs = dialogs;
         Show = new Show();
         _playhead = new Playhead(Show);
+        _liveTimer = CreateLiveTimer();
 
         // Ошибка звука не должна ронять программу — показываем её в статусе
         try
@@ -88,25 +98,53 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Добавить кью нужного типа сразу после выбранной.</summary>
-    [RelayCommand]
-    private void AddCue(string type)
-    {
-        Cue cue = type switch
-        {
-            "Audio" => new AudioCue(),
-            "Fade" => new FadeCue(),
-            "Stop" => new StopCue(),
-            "Wait" => new WaitCue(),
-            "Group" => new GroupCue(),
-            _ => throw new ArgumentException("Неизвестный тип кью: " + type),
-        };
-        cue.Name = "Новая " + type;
+    // ---------- Кью-лист ----------
 
-        Show.InsertAfter(SelectedRow?.Cue, cue);
+    /// <summary>
+    /// Добавить кью нужного типа сразу после выбранной.
+    /// Audio — сначала выбрать файлы (можно несколько: будет несколько кью подряд); отмена — ничего не добавляем.
+    /// </summary>
+    [RelayCommand]
+    private async Task AddCue(string type)
+    {
+        List<Cue> added;
+        if (type == "Audio")
+        {
+            var files = await _dialogs.PickAudioFilesAsync();
+            added = files.Select(file => (Cue)new AudioCue
+            {
+                FilePath = MediaPaths.ToStored(file, ShowDirectory),
+                Name = Path.GetFileNameWithoutExtension(file),
+            }).ToList();
+        }
+        else
+        {
+            Cue cue = type switch
+            {
+                "Fade" => new FadeCue(),
+                "Stop" => new StopCue(),
+                "Wait" => new WaitCue(),
+                "Group" => new GroupCue(),
+                _ => throw new ArgumentException("Неизвестный тип кью: " + type),
+            };
+            cue.Name = "Новая " + type;
+            added = [cue];
+        }
+
+        if (added.Count == 0)
+            return;
+
+        Cue? anchor = SelectedRow?.Cue;
+        foreach (var cue in added)
+        {
+            Show.InsertAfter(anchor, cue);
+            anchor = cue;
+        }
+
         IsDirty = true;
         RebuildRows();
-        SelectedRow = Rows.First(r => r.Cue == cue);
+        SelectedRow = _rowByCue[added[^1]];
+        LoadDurations(added.OfType<AudioCue>());
     }
 
     /// <summary>Удалить выбранную кью (группу — вместе с подкью) и выбрать следующую строку.</summary>
@@ -118,71 +156,14 @@ public partial class MainViewModel : ViewModelBase
 
         int index = Rows.IndexOf(SelectedRow);
         Show.Remove(SelectedRow.Cue);
+        StopRemovedCues();
         IsDirty = true;
         RebuildRows();
         SelectedRow = Rows.Count == 0 ? null : Rows[Math.Min(index, Rows.Count - 1)];
     }
 
-    [RelayCommand]
-    private void Go()
-    {
-        if (!_goGuard.TryAccept(_clock.Elapsed, Show.Settings.DoubleGoProtectionMs))
-        {
-            Status = $"Повторный GO проигнорирован (защита {Show.Settings.DoubleGoProtectionMs} мс)";
-            return;
-        }
-
-        Cue? selected = _playhead.Current;
-        Cue? started = _playhead.Go();
-
-        // Выбор в списке переезжает туда, куда ушел плейхед (или пусто в конце списка)
-        SelectedRow = Rows.FirstOrDefault(r => r.Cue == _playhead.Current);
-
-        if (started is null)
-        {
-            Status = selected is GroupCue ? "Вход в группу " + Describe(selected) : "Ничего не выбрано — GO пропущен";
-            return;
-        }
-
-        Status = "GO → " + Describe(started);
-        PlayTestSound(); // пока вместо настоящего запуска кью
-    }
-
     private static string Describe(Cue cue) =>
         cue.Number == "" ? cue.Name : cue.Number + " · " + cue.Name;
-
-    private void PlayTestSound()
-    {
-        if (!_audio.IsInitialized)
-            return;
-
-        try
-        {
-            _audio.PlayTestTone();
-        }
-        catch (Exception ex)
-        {
-            Status = "Ошибка воспроизведения: " + ex.Message;
-        }
-    }
-
-    [RelayCommand]
-    private void Stop()
-    {
-        if (!_audio.IsInitialized)
-            return;
-
-        _audio.StopAll();
-        Status = "Остановлено";
-    }
-
-    [RelayCommand]
-    private void Panic()
-    {
-        // Фейд Panic (Settings.PanicFadeSeconds) появится вместе с фейдами в аудиодвижке
-        Stop();
-        Status = "PANIC — всё остановлено";
-    }
 
     // ---------- Файл ----------
 
@@ -253,6 +234,11 @@ public partial class MainViewModel : ViewModelBase
 
     private bool SaveTo(string path)
     {
+        // Пути к звукам пересчитываем относительно новой папки шоу
+        string? oldDirectory = ShowDirectory;
+        string newDirectory = Path.GetDirectoryName(Path.GetFullPath(path))!;
+        MediaPaths.Relocate(Show, oldDirectory, newDirectory);
+
         try
         {
             ShowFile.Save(Show, path);
@@ -263,7 +249,9 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            // Нет прав, диск полон, флешку вынули — шоу остается в памяти, можно сохранить в другое место
+            // Нет прав, диск полон, флешку вынули — шоу остается в памяти, можно сохранить в другое место.
+            // Пути возвращаем как были, чтобы они по-прежнему находили файлы
+            MediaPaths.Relocate(Show, newDirectory, oldDirectory);
             Status = "Не удалось сохранить: " + ex.Message;
             return false;
         }
@@ -271,18 +259,21 @@ public partial class MainViewModel : ViewModelBase
 
     private void LoadShow(Show show, string? path)
     {
+        StopEverythingForShowChange();
         Show = show;
         _playhead = new Playhead(show);
         FilePath = path;
         IsDirty = false;
         RebuildRows();
         SelectedRow = Rows.FirstOrDefault();
+        LoadDurations(show.AllCues().OfType<AudioCue>());
     }
 
     /// <summary>Пересобирает плоский список строк из дерева кью шоу.</summary>
     private void RebuildRows()
     {
         Rows.Clear();
+        _rowByCue.Clear();
         AddRows(Show.Cues, depth: 0);
         OnPropertyChanged(nameof(CueCountText));
     }
@@ -291,7 +282,10 @@ public partial class MainViewModel : ViewModelBase
     {
         foreach (var cue in cues)
         {
-            Rows.Add(new CueRowViewModel(cue, depth));
+            var row = new CueRowViewModel(cue, depth);
+            ApplyPlaybackState(row); // длительность файла, «играет», «нет файла» переживают пересборку
+            Rows.Add(row);
+            _rowByCue[cue] = row;
             if (cue is GroupCue group)
                 AddRows(group.Children, depth + 1);
         }

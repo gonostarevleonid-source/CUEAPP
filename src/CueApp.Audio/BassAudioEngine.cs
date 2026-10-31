@@ -10,9 +10,8 @@ namespace CueApp.Audio;
 public sealed class BassAudioEngine : IAudioEngine
 {
     private const int SampleRate = 48000;
-    private const int Channels = 2;
 
-    private readonly List<int> _streams = new();
+    private readonly List<BassPlayback> _playing = new();
 
     public bool IsInitialized { get; private set; }
 
@@ -28,32 +27,45 @@ public sealed class BassAudioEngine : IAudioEngine
         IsInitialized = true;
     }
 
-    public void PlayTestTone()
+    public double GetDuration(string filePath)
     {
-        float[] samples = GenerateTone(frequencyHz: 1000, seconds: 2.0, levelDb: -12);
-
-        // Push-поток: BASS копирует данные к себе, после этого массив можно не хранить
-        int stream = Bass.CreateStream(SampleRate, Channels, BassFlags.Float | BassFlags.AutoFree,
-            StreamProcedureType.Push);
+        // Decode — только читаем файл, ничего не играем; Prescan — точная длина для MP3
+        int stream = Bass.CreateStream(filePath, 0, 0, BassFlags.Decode | BassFlags.Prescan | BassFlags.Float);
         if (stream == 0)
-            throw new InvalidOperationException("Не удалось создать поток: " + Bass.LastError);
+            throw new InvalidOperationException(BassErrors.Describe(Bass.LastError));
 
-        // Флаг End говорит BASS, что больше данных не будет — поток сам освободится в конце
-        Bass.StreamPutData(stream, samples, (samples.Length * sizeof(float)) | (int)StreamProcedureType.End);
-        Bass.ChannelPlay(stream);
-
-        lock (_streams)
-            _streams.Add(stream);
+        try
+        {
+            return Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetLength(stream));
+        }
+        finally
+        {
+            Bass.StreamFree(stream);
+        }
     }
 
-    public void StopAll()
+    public IAudioPlayback Play(AudioPlayRequest request)
     {
-        lock (_streams)
+        var playback = new BassPlayback(request);
+        lock (_playing)
+            _playing.Add(playback);
+
+        playback.Finished += (_, _) =>
         {
-            foreach (int stream in _streams)
-                Bass.StreamFree(stream); // уже освобожденный поток просто вернет false
-            _streams.Clear();
-        }
+            lock (_playing)
+                _playing.Remove(playback);
+        };
+        return playback;
+    }
+
+    public void StopAll(double fadeSeconds)
+    {
+        BassPlayback[] snapshot;
+        lock (_playing)
+            snapshot = _playing.ToArray();
+
+        foreach (var playback in snapshot)
+            playback.Stop(fadeSeconds);
     }
 
     public void Dispose()
@@ -61,27 +73,7 @@ public sealed class BassAudioEngine : IAudioEngine
         if (!IsInitialized)
             return;
 
-        StopAll();
         Bass.Free();
         IsInitialized = false;
-    }
-
-    /// <summary>Синус в стерео (float), с фейдами 10 мс на краях, чтобы не было щелчков.</summary>
-    private static float[] GenerateTone(double frequencyHz, double seconds, double levelDb)
-    {
-        int frames = (int)(SampleRate * seconds);
-        int fadeFrames = SampleRate / 100;
-        double amplitude = Math.Pow(10, levelDb / 20);
-        var data = new float[frames * Channels];
-
-        for (int i = 0; i < frames; i++)
-        {
-            double fade = Math.Min(1.0, Math.Min(i, frames - 1 - i) / (double)fadeFrames);
-            float value = (float)(amplitude * fade * Math.Sin(2 * Math.PI * frequencyHz * i / SampleRate));
-            data[i * Channels] = value;
-            data[i * Channels + 1] = value;
-        }
-
-        return data;
     }
 }

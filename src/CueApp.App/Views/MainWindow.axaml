@@ -116,6 +116,17 @@
         <Style Selector="Border.flag">
             <Setter Property="Background" Value="Transparent" />
         </Style>
+        <!-- Играющая кью: синяя полоска (у выбранной зеленая важнее — стиль ниже) -->
+        <Style Selector="Border.flag.playing">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+        </Style>
+        <Style Selector="TextBlock.duration.playing">
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+        <Style Selector="TextBlock.duration.missing">
+            <Setter Property="Foreground" Value="{StaticResource WarningRedBrush}" />
+        </Style>
         <Style Selector="Border.outline.selected">
             <Setter Property="BorderBrush" Value="{StaticResource TextBrush}" />
         </Style>
@@ -246,7 +257,8 @@
                                                Fill="{StaticResource SubCueGuideBrush}"
                                                IsVisible="{Binding IsSubCue}" />
                                     <!-- Полоска состояния: зеленая у выбранной -->
-                                    <Border Classes="flag" Classes.selected="{Binding IsSelected}" />
+                                    <Border Classes="flag" Classes.selected="{Binding IsSelected}"
+                                            Classes.playing="{Binding IsPlaying}" />
 
                                     <TextBlock Grid.Column="1" Classes="mono" Margin="12,0,0,0"
                                                VerticalAlignment="Center"
@@ -265,7 +277,9 @@
 
                                     <TextBlock Grid.Column="4" Classes="mono secondary" VerticalAlignment="Center"
                                                Text="{Binding PreWait}" />
-                                    <TextBlock Grid.Column="5" Classes="mono" VerticalAlignment="Center"
+                                    <TextBlock Grid.Column="5" Classes="mono duration" VerticalAlignment="Center"
+                                               Classes.playing="{Binding IsPlaying}"
+                                               Classes.missing="{Binding IsMissingFile}"
                                                Text="{Binding Duration}" />
                                     <TextBlock Grid.Column="6" Classes="mono secondary" VerticalAlignment="Center"
                                                Text="{Binding PostWait}" />
