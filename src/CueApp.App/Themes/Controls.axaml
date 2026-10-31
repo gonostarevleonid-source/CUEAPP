@@ -1,0 +1,26 @@
+<!-- Общие стили элементов для всех окон приложения -->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Обычная кнопка панели инструментов и диалогов -->
+    <Style Selector="Button.tool">
+        <Setter Property="Background" Value="{StaticResource FieldBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+    <!-- Тема Fluent при наведении красит кнопку своим серым — держим наши цвета -->
+    <Style Selector="Button.tool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{Binding $parent[Button].Background}" />
+        <Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}" />
+        <Setter Property="BorderBrush" Value="{StaticResource SubCueGuideBrush}" />
+        <Setter Property="Opacity" Value="0.9" />
+    </Style>
+    <Style Selector="Button.tool:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Opacity" Value="0.75" />
+    </Style>
+</Styles>

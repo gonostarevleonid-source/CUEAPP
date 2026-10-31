@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CueApp.App.Services;
 using CueApp.Core.Audio;
 using CueApp.Core.Model;
 using CueApp.Core.Playback;
@@ -13,14 +16,27 @@ namespace CueApp.App.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
+    private const string UntitledName = "Без названия";
+
     private readonly IAudioEngine _audio;
-    private readonly Playhead _playhead;
+    private readonly IDialogService _dialogs;
     private readonly GoGuard _goGuard = new();
+    private Playhead _playhead;
 
     // Монотонные часы для защиты от двойного GO (не зависят от перевода системного времени)
     private readonly Stopwatch _clock = Stopwatch.StartNew();
 
-    public Show Show { get; }
+    public Show Show { get; private set; }
+
+    /// <summary>Файл, в котором лежит шоу; null — новое шоу, еще ни разу не сохранено.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowTitle), nameof(FileLabel), nameof(WindowTitle))]
+    public partial string? FilePath { get; private set; }
+
+    /// <summary>Есть несохраненные изменения.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(WindowTitle))]
+    public partial bool IsDirty { get; private set; }
 
     /// <summary>Строки кью-листа сверху вниз (подкью идут сразу за своей группой).</summary>
     public ObservableCollection<CueRowViewModel> Rows { get; } = new();
@@ -32,7 +48,13 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial string Status { get; set; } = "";
 
-    public string ShowTitle => Show.Name;
+    /// <summary>Название шоу = имя файла без «.cue».</summary>
+    public string ShowTitle => FilePath is null ? UntitledName : Path.GetFileNameWithoutExtension(FilePath);
+
+    public string FileLabel => FilePath is null ? "не сохранено" : Path.GetFileName(FilePath);
+
+    /// <summary>Заголовок окна; «•» — есть несохраненные изменения.</summary>
+    public string WindowTitle => "CUEAPP — " + ShowTitle + (IsDirty ? " •" : "");
 
     public string CueCountText => Rows.Count + " кью";
 
@@ -47,13 +69,12 @@ public partial class MainViewModel : ViewModelBase
         _playhead.Current = newValue?.Cue;
     }
 
-    public MainViewModel(IAudioEngine audio, Show show)
+    public MainViewModel(IAudioEngine audio, IDialogService dialogs)
     {
         _audio = audio;
-        Show = show;
-        _playhead = new Playhead(show);
-        RebuildRows();
-        SelectedRow = Rows.FirstOrDefault();
+        _dialogs = dialogs;
+        Show = new Show();
+        _playhead = new Playhead(Show);
 
         // Ошибка звука не должна ронять программу — показываем её в статусе
         try
@@ -83,6 +104,7 @@ public partial class MainViewModel : ViewModelBase
         cue.Name = "Новая " + type;
 
         Show.InsertAfter(SelectedRow?.Cue, cue);
+        IsDirty = true;
         RebuildRows();
         SelectedRow = Rows.First(r => r.Cue == cue);
     }
@@ -96,6 +118,7 @@ public partial class MainViewModel : ViewModelBase
 
         int index = Rows.IndexOf(SelectedRow);
         Show.Remove(SelectedRow.Cue);
+        IsDirty = true;
         RebuildRows();
         SelectedRow = Rows.Count == 0 ? null : Rows[Math.Min(index, Rows.Count - 1)];
     }
@@ -159,6 +182,101 @@ public partial class MainViewModel : ViewModelBase
         // Фейд Panic (Settings.PanicFadeSeconds) появится вместе с фейдами в аудиодвижке
         Stop();
         Status = "PANIC — всё остановлено";
+    }
+
+    // ---------- Файл ----------
+
+    [RelayCommand]
+    private async Task NewShow()
+    {
+        if (!await ConfirmDiscardChangesAsync())
+            return;
+
+        LoadShow(new Show(), path: null);
+        Status = "Новое шоу";
+    }
+
+    [RelayCommand]
+    private async Task OpenShow()
+    {
+        if (!await ConfirmDiscardChangesAsync())
+            return;
+
+        string? path = await _dialogs.PickShowToOpenAsync();
+        if (path is null)
+            return;
+
+        // Битый файл не роняет программу: текущее шоу остается открытым
+        try
+        {
+            LoadShow(ShowFile.Load(path), path);
+            Status = "Открыто: " + path;
+        }
+        catch (Exception ex)
+        {
+            Status = "Не удалось открыть " + Path.GetFileName(path) + ": " + ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private Task SaveShow() => SaveAsync();
+
+    [RelayCommand]
+    private Task SaveShowAs() => SaveAsAsync();
+
+    /// <summary>
+    /// Перед «Новое», «Открыть» и закрытием окна: если есть несохраненные изменения — спросить.
+    /// true — можно продолжать (сохранили или решили не сохранять), false — отмена.
+    /// </summary>
+    public async Task<bool> ConfirmDiscardChangesAsync()
+    {
+        if (!IsDirty)
+            return true;
+
+        return await _dialogs.AskSaveChangesAsync(ShowTitle) switch
+        {
+            SaveChangesAnswer.Save => await SaveAsync(),
+            SaveChangesAnswer.DontSave => true,
+            _ => false,
+        };
+    }
+
+    /// <summary>Сохранить в текущий файл (новое шоу — спросить куда). true — сохранено.</summary>
+    private Task<bool> SaveAsync() =>
+        FilePath is null ? SaveAsAsync() : Task.FromResult(SaveTo(FilePath));
+
+    private async Task<bool> SaveAsAsync()
+    {
+        string? path = await _dialogs.PickShowToSaveAsync(ShowTitle + ShowFile.Extension);
+        return path is not null && SaveTo(path);
+    }
+
+    private bool SaveTo(string path)
+    {
+        try
+        {
+            ShowFile.Save(Show, path);
+            FilePath = path;
+            IsDirty = false;
+            Status = "Сохранено: " + path;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // Нет прав, диск полон, флешку вынули — шоу остается в памяти, можно сохранить в другое место
+            Status = "Не удалось сохранить: " + ex.Message;
+            return false;
+        }
+    }
+
+    private void LoadShow(Show show, string? path)
+    {
+        Show = show;
+        _playhead = new Playhead(show);
+        FilePath = path;
+        IsDirty = false;
+        RebuildRows();
+        SelectedRow = Rows.FirstOrDefault();
     }
 
     /// <summary>Пересобирает плоский список строк из дерева кью шоу.</summary>

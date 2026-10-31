@@ -1,10 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CueApp.App.ViewModels"
+        xmlns:app="using:CueApp.App"
         x:Class="CueApp.App.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="CUEAPP"
+        Title="{Binding WindowTitle}"
         Width="1280" Height="760"
         Background="{StaticResource BackgroundBrush}"
         Foreground="{StaticResource TextBrush}"
@@ -18,7 +19,27 @@
         <KeyBinding Gesture="Delete" Command="{Binding DeleteCueCommand}" />
         <!-- Клавиша «delete» на Mac — это Backspace; Meta = Cmd, как в Finder -->
         <KeyBinding Gesture="Meta+Back" Command="{Binding DeleteCueCommand}" />
+        <!-- Горячие клавиши меню «Файл» добавляются в MainWindow.axaml.cs -->
     </Window.KeyBindings>
+
+    <!-- Меню: на Mac — в верхней строке экрана, на Windows — полоской в окне (NativeMenuBar ниже) -->
+    <NativeMenu.Menu>
+        <NativeMenu>
+            <NativeMenuItem Header="Файл">
+                <NativeMenu>
+                    <NativeMenuItem Header="Новое шоу" Command="{Binding NewShowCommand}"
+                                    Gesture="{x:Static app:Hotkeys.NewShow}" />
+                    <NativeMenuItem Header="Открыть…" Command="{Binding OpenShowCommand}"
+                                    Gesture="{x:Static app:Hotkeys.OpenShow}" />
+                    <NativeMenuItemSeparator />
+                    <NativeMenuItem Header="Сохранить" Command="{Binding SaveShowCommand}"
+                                    Gesture="{x:Static app:Hotkeys.SaveShow}" />
+                    <NativeMenuItem Header="Сохранить как…" Command="{Binding SaveShowAsCommand}"
+                                    Gesture="{x:Static app:Hotkeys.SaveShowAs}" />
+                </NativeMenu>
+            </NativeMenuItem>
+        </NativeMenu>
+    </NativeMenu.Menu>
 
     <Window.Styles>
         <!-- Кнопки не забирают фокус клавиатуры: иначе Пробел нажал бы, например, PANIC вместо GO -->
@@ -39,21 +60,6 @@
             <Setter Property="Background" Value="#3A1416" />
             <Setter Property="BorderBrush" Value="{StaticResource PanicBrush}" />
             <Setter Property="Foreground" Value="{StaticResource PanicTextBrush}" />
-        </Style>
-        <Style Selector="Button.tool">
-            <Setter Property="Background" Value="{StaticResource FieldBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="4" />
-            <Setter Property="Padding" Value="10,6" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="Medium" />
-        </Style>
-        <Style Selector="Button.tool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource CardBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource SubCueGuideBrush}" />
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
         </Style>
 
         <Style Selector="Path.continue">
@@ -119,6 +125,9 @@
     </Window.Styles>
 
     <DockPanel>
+        <!-- Полоска меню; на Mac не видна — там меню в строке экрана -->
+        <NativeMenuBar DockPanel.Dock="Top" Background="{StaticResource PanelBrush}" />
+
         <!-- ШАПКА -->
         <Border DockPanel.Dock="Top" Background="{StaticResource Panel2Brush}"
                 BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1"
@@ -128,7 +137,9 @@
                     <TextBlock FontWeight="Bold" FontSize="15" LetterSpacing="0.6">
                         <Run Text="CUE" Foreground="{StaticResource AccentBrush}" /><Run Text="APP" />
                     </TextBlock>
-                    <TextBlock Text="{Binding ShowTitle}" Classes="secondary" FontSize="12" />
+                    <TextBlock Classes="secondary" FontSize="12">
+                        <Run Text="{Binding ShowTitle}" /><Run Text=" · " /><Run Text="{Binding FileLabel}" />
+                    </TextBlock>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">

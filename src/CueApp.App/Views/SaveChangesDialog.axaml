@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CueApp.App.Views.SaveChangesDialog"
+        Title="CUEAPP"
+        Width="440" SizeToContent="Height"
+        CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource PanelBrush}"
+        Foreground="{StaticResource TextBrush}"
+        FontFamily="{StaticResource UiFont}"
+        FontSize="13">
+
+    <StackPanel Margin="24,20" Spacing="16">
+        <TextBlock x:Name="QuestionText" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" />
+        <TextBlock Text="Если не сохранить, изменения пропадут." TextWrapping="Wrap"
+                   Foreground="{StaticResource TextSecondaryBrush}" />
+
+        <!-- Enter = Сохранить, Esc = Отмена -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+            <Button Classes="tool" Content="Не сохранять" Click="OnDontSave" />
+            <Button Classes="tool" Content="Отмена" IsCancel="True" Click="OnCancel" />
+            <Button Classes="tool" Content="Сохранить" IsDefault="True" Click="OnSave"
+                    Background="{StaticResource GoBrush}" Foreground="White" BorderThickness="0" />
+        </StackPanel>
+    </StackPanel>
+</Window>

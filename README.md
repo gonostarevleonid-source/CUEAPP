@@ -31,6 +31,7 @@ dotnet test
 | `src/CueApp.Control` | MIDI, MTC, OSC, Art-Net/sACN |
 | `src/CueApp.App` | Интерфейс на Avalonia (MVVM) |
 | `tests/CueApp.Tests` | Тесты ядра |
+| `samples/demo.cue` | Пример шоу — открыть через «Файл → Открыть…» |
 
 ## BASS
 
