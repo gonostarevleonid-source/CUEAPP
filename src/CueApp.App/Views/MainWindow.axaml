@@ -5,19 +5,26 @@
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="CUEAPP"
-        Width="900" Height="560"
+        Width="1280" Height="760"
         Background="{StaticResource BackgroundBrush}"
         Foreground="{StaticResource TextBrush}"
-        FontFamily="{StaticResource UiFont}">
+        FontFamily="{StaticResource UiFont}"
+        FontSize="13">
 
-    <!-- Пробел = GO, Esc = STOP -->
+    <!-- Пробел = GO, Esc = STOP, Delete = удалить выбранную кью -->
     <Window.KeyBindings>
         <KeyBinding Gesture="Space" Command="{Binding GoCommand}" />
         <KeyBinding Gesture="Escape" Command="{Binding StopCommand}" />
+        <KeyBinding Gesture="Delete" Command="{Binding DeleteCueCommand}" />
     </Window.KeyBindings>
 
     <Window.Styles>
-        <!-- Тема Fluent при наведении красит кнопку серым — оставляем GO зеленой -->
+        <!-- Кнопки не забирают фокус клавиатуры: иначе Пробел нажал бы, например, PANIC вместо GO -->
+        <Style Selector="Button">
+            <Setter Property="Focusable" Value="False" />
+        </Style>
+
+        <!-- Кнопки шапки и панели: тема Fluent при наведении красит их серым — держим свои цвета -->
         <Style Selector="Button.go:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{StaticResource GoBrush}" />
             <Setter Property="Foreground" Value="White" />
@@ -26,34 +33,242 @@
         <Style Selector="Button.go:pressed /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Opacity" Value="0.75" />
         </Style>
+        <Style Selector="Button.panic:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#3A1416" />
+            <Setter Property="BorderBrush" Value="{StaticResource PanicBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource PanicTextBrush}" />
+        </Style>
+        <Style Selector="Button.tool">
+            <Setter Property="Background" Value="{StaticResource FieldBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+        <Style Selector="Button.tool:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource CardBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource SubCueGuideBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        </Style>
+
+        <Style Selector="Path.continue">
+            <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
+            <Setter Property="StrokeThickness" Value="1.8" />
+            <Setter Property="StrokeLineCap" Value="Round" />
+            <Setter Property="StrokeJoin" Value="Round" />
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="15" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="4,0,0,0" />
+        </Style>
+
+        <!-- Колонки времени: моноширинный шрифт -->
+        <Style Selector="TextBlock.mono">
+            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+        </Style>
+        <Style Selector="TextBlock.secondary">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+        </Style>
+
+        <!-- Кью-лист: убираем стандартную подсветку Fluent, рисуем выделение сами -->
+        <Style Selector="ListBox.cues ListBoxItem">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="FocusAdorner" Value="{x:Null}" />
+        </Style>
+        <Style Selector="ListBox.cues ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.cues ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.cues ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.cues ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.cues ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="ListBox.cues ListBoxItem:selected:focus /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <!-- Выбранная кью («уйдет по GO»): белая обводка + зеленая полоска слева.
+             Цвета по умолчанию задаются здесь, а не в разметке: значение в разметке сильнее стиля -->
+        <Style Selector="Border.outline">
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.flag">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+        <Style Selector="Border.outline.selected">
+            <Setter Property="BorderBrush" Value="{StaticResource TextBrush}" />
+        </Style>
+        <Style Selector="Border.flag.selected">
+            <Setter Property="Background" Value="{StaticResource GoBrush}" />
+        </Style>
     </Window.Styles>
 
     <DockPanel>
-        <!-- Шапка -->
-        <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
+        <!-- ШАПКА -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource Panel2Brush}"
                 BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1"
-                Padding="16,10">
-            <TextBlock Text="CUEAPP" FontWeight="Bold" FontSize="16" />
+                Padding="16,12">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel VerticalAlignment="Center" Spacing="4">
+                    <TextBlock FontWeight="Bold" FontSize="15" LetterSpacing="0.6">
+                        <Run Text="CUE" Foreground="{StaticResource AccentBrush}" /><Run Text="APP" />
+                    </TextBlock>
+                    <TextBlock Text="{Binding ShowTitle}" Classes="secondary" FontSize="12" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                    <Button Classes="panic" Command="{Binding PanicCommand}" MinWidth="84" Height="64"
+                            Background="#2A1214" Foreground="{StaticResource PanicTextBrush}"
+                            BorderBrush="{StaticResource PanicBrush}" BorderThickness="1" CornerRadius="6"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            FontWeight="Bold" Content="PANIC" />
+                    <Button Classes="tool" Command="{Binding StopCommand}" MinWidth="76" Height="64"
+                            CornerRadius="6" FontSize="13" FontWeight="Bold"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            Content="STOP" />
+                    <Button Classes="go" Command="{Binding GoCommand}" MinWidth="140" Height="64"
+                            Background="{StaticResource GoBrush}" Foreground="White" CornerRadius="6"
+                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                            FontSize="26" FontWeight="ExtraBold" LetterSpacing="1.5" Content="GO" />
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <!-- Строка статуса -->
+        <!-- СТРОКА СТАТУСА -->
         <Border DockPanel.Dock="Bottom" Background="{StaticResource PanelBrush}"
                 BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
-                Padding="16,8">
-            <TextBlock Text="{Binding Status}" Foreground="{StaticResource TextSecondaryBrush}"
-                       FontFamily="{StaticResource MonoFont}" />
+                Padding="16,6">
+            <TextBlock Text="{Binding Status}" Classes="mono secondary" FontSize="12" />
         </Border>
 
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
-            <Button Classes="go" Command="{Binding GoCommand}" Width="320" Height="140"
-                    Background="{StaticResource GoBrush}" Foreground="White"
-                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                    CornerRadius="8" FontSize="56" FontWeight="Bold" Content="GO" />
-            <Button Command="{Binding StopCommand}" Width="320" Height="48"
-                    Background="{StaticResource CardBrush}" Foreground="{StaticResource TextBrush}"
-                    BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
-                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                    CornerRadius="6" FontSize="18" FontWeight="SemiBold" Content="STOP" />
-        </StackPanel>
+        <!-- ПАНЕЛЬ «ДОБАВИТЬ» -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource Panel2Brush}"
+                BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1"
+                Padding="12,8">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding CueCountText}" Classes="secondary"
+                           FontSize="12" VerticalAlignment="Center" />
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="Добавить:" Classes="secondary" FontSize="12"
+                               VerticalAlignment="Center" Margin="0,0,6,0" />
+                    <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Audio">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Border Width="8" Height="8" CornerRadius="2" Background="{StaticResource CueAudioBrush}" />
+                            <TextBlock Text="Audio" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Fade">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Border Width="8" Height="8" CornerRadius="2" Background="{StaticResource CueFadeBrush}" />
+                            <TextBlock Text="Fade" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Stop">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Border Width="8" Height="8" CornerRadius="2" Background="{StaticResource CueStopBrush}" />
+                            <TextBlock Text="Stop" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Wait">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Border Width="8" Height="8" CornerRadius="2" Background="{StaticResource CueGroupBrush}" />
+                            <TextBlock Text="Wait" />
+                        </StackPanel>
+                    </Button>
+                    <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Group">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Border Width="8" Height="8" CornerRadius="2" Background="{StaticResource CueGroupBrush}" />
+                            <TextBlock Text="Group" />
+                        </StackPanel>
+                    </Button>
+                    <Border Width="1" Background="{StaticResource LineBrush}" Margin="6,2" />
+                    <Button Classes="tool" Command="{Binding DeleteCueCommand}" Content="Удалить" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- КЬЮ-ЛИСТ -->
+        <DockPanel>
+            <!-- Заголовок таблицы: те же колонки, что у строк -->
+            <Border DockPanel.Dock="Top" Background="{StaticResource TableHeaderBrush}"
+                    BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1"
+                    Padding="0,8">
+                <Grid ColumnDefinitions="6,54,92,*,70,80,70,48" TextElement.FontSize="11"
+                      TextElement.Foreground="{StaticResource TextSecondaryBrush}">
+                    <TextBlock Grid.Column="1" Text="№" Margin="12,0,0,0" />
+                    <TextBlock Grid.Column="2" Text="ТИП" LetterSpacing="0.6" />
+                    <TextBlock Grid.Column="3" Text="НАЗВАНИЕ" LetterSpacing="0.6" />
+                    <TextBlock Grid.Column="4" Text="PRE" LetterSpacing="0.6" />
+                    <TextBlock Grid.Column="5" Text="ДЛИТ." LetterSpacing="0.6" />
+                    <TextBlock Grid.Column="6" Text="POST" LetterSpacing="0.6" />
+                    <TextBlock Grid.Column="7" Text="CONT" LetterSpacing="0.6" />
+                </Grid>
+            </Border>
+
+            <ListBox Classes="cues" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}"
+                     Background="Transparent">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CueRowViewModel">
+                        <!-- Подкью: вся строка смещена вправо (RowMargin), правые колонки остаются выровнены -->
+                        <Border Margin="{Binding RowMargin}" Background="{Binding RowBackground}"
+                                BorderBrush="{StaticResource RowLineBrush}" BorderThickness="0,0,0,1"
+                                MinHeight="44">
+                            <Panel>
+                                <Grid ColumnDefinitions="6,54,92,*,70,80,70,48">
+                                    <!-- Тонкая вертикальная линия у подкью -->
+                                    <Rectangle Width="2" HorizontalAlignment="Left"
+                                               Fill="{StaticResource SubCueGuideBrush}"
+                                               IsVisible="{Binding IsSubCue}" />
+                                    <!-- Полоска состояния: зеленая у выбранной -->
+                                    <Border Classes="flag" Classes.selected="{Binding IsSelected}" />
+
+                                    <TextBlock Grid.Column="1" Classes="mono" Margin="12,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Text="{Binding Number}" FontWeight="{Binding NumberWeight}" />
+
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6"
+                                                VerticalAlignment="Center">
+                                        <Border Width="8" Height="8" CornerRadius="2" Background="{Binding TypeBrush}" />
+                                        <TextBlock Text="{Binding TypeLabel}" Foreground="{Binding TypeBrush}"
+                                                   FontSize="12" FontWeight="SemiBold" />
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Column="3" Text="{Binding Name}" FontWeight="Medium"
+                                               VerticalAlignment="Center" Margin="0,0,8,0"
+                                               TextTrimming="CharacterEllipsis" />
+
+                                    <TextBlock Grid.Column="4" Classes="mono secondary" VerticalAlignment="Center"
+                                               Text="{Binding PreWait}" />
+                                    <TextBlock Grid.Column="5" Classes="mono" VerticalAlignment="Center"
+                                               Text="{Binding Duration}" />
+                                    <TextBlock Grid.Column="6" Classes="mono secondary" VerticalAlignment="Center"
+                                               Text="{Binding PostWait}" />
+                                    <!-- Continue: ↓ — auto-continue, ↓ с чертой — auto-follow -->
+                                    <Path Grid.Column="7" Classes="continue" IsVisible="{Binding IsAutoContinue}"
+                                          Data="M 6,1 L 6,13 M 1.5,8.5 L 6,13 L 10.5,8.5" />
+                                    <Path Grid.Column="7" Classes="continue" IsVisible="{Binding IsAutoFollow}"
+                                          Data="M 6,1 L 6,11 M 1.5,6.5 L 6,11 L 10.5,6.5 M 1,14 L 11,14" />
+                                </Grid>
+                                <!-- Обводка выбранной строки (белая — в стилях выше) -->
+                                <Border Classes="outline" Classes.selected="{Binding IsSelected}" />
+                            </Panel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
     </DockPanel>
 </Window>

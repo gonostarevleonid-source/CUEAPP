@@ -44,6 +44,12 @@
     <Color x:Key="FillPurpleColor">#2E2340</Color>
     <Color x:Key="FillPinkColor">#3A1F30</Color>
 
+    <!-- Кью-лист (из макета) -->
+    <Color x:Key="TableHeaderColor">#0F1012</Color>
+    <Color x:Key="RowLineColor">#1E1F23</Color>
+    <Color x:Key="SubCueBackgroundColor">#111215</Color>
+    <Color x:Key="SubCueGuideColor">#3A3C42</Color>
+
     <!-- Кисти (их и используем в разметке) -->
     <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
     <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource PanelColor}" />
@@ -58,6 +64,30 @@
     <SolidColorBrush x:Key="PanicBrush" Color="{StaticResource PanicColor}" />
     <SolidColorBrush x:Key="PanicTextBrush" Color="{StaticResource PanicTextColor}" />
     <SolidColorBrush x:Key="WarningRedBrush" Color="{StaticResource WarningRedColor}" />
+    <SolidColorBrush x:Key="Panel2Brush" Color="{StaticResource Panel2Color}" />
+    <SolidColorBrush x:Key="PlayingBackgroundBrush" Color="{StaticResource PlayingBackgroundColor}" />
+
+    <SolidColorBrush x:Key="TableHeaderBrush" Color="{StaticResource TableHeaderColor}" />
+    <SolidColorBrush x:Key="RowLineBrush" Color="{StaticResource RowLineColor}" />
+    <SolidColorBrush x:Key="SubCueBackgroundBrush" Color="{StaticResource SubCueBackgroundColor}" />
+    <SolidColorBrush x:Key="SubCueGuideBrush" Color="{StaticResource SubCueGuideColor}" />
+
+    <SolidColorBrush x:Key="CueAudioBrush" Color="{StaticResource CueAudioColor}" />
+    <SolidColorBrush x:Key="CueTimelineBrush" Color="{StaticResource CueTimelineColor}" />
+    <SolidColorBrush x:Key="CueFadeBrush" Color="{StaticResource CueFadeColor}" />
+    <SolidColorBrush x:Key="CueMidiBrush" Color="{StaticResource CueMidiColor}" />
+    <SolidColorBrush x:Key="CueOscBrush" Color="{StaticResource CueOscColor}" />
+    <SolidColorBrush x:Key="CueDmxBrush" Color="{StaticResource CueDmxColor}" />
+    <SolidColorBrush x:Key="CueStopBrush" Color="{StaticResource CueStopColor}" />
+    <SolidColorBrush x:Key="CueGroupBrush" Color="{StaticResource CueGroupColor}" />
+
+    <SolidColorBrush x:Key="FillRedBrush" Color="{StaticResource FillRedColor}" />
+    <SolidColorBrush x:Key="FillOrangeBrush" Color="{StaticResource FillOrangeColor}" />
+    <SolidColorBrush x:Key="FillYellowBrush" Color="{StaticResource FillYellowColor}" />
+    <SolidColorBrush x:Key="FillGreenBrush" Color="{StaticResource FillGreenColor}" />
+    <SolidColorBrush x:Key="FillBlueBrush" Color="{StaticResource FillBlueColor}" />
+    <SolidColorBrush x:Key="FillPurpleBrush" Color="{StaticResource FillPurpleColor}" />
+    <SolidColorBrush x:Key="FillPinkBrush" Color="{StaticResource FillPinkColor}" />
 
     <!-- Шрифты. JetBrains Mono подключим позже; пока — системный моноширинный -->
     <FontFamily x:Key="UiFont">fonts:Inter#Inter</FontFamily>
