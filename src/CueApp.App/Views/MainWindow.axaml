@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CueApp.App.ViewModels"
+        x:Class="CueApp.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="CUEAPP"
+        Width="900" Height="560"
+        Background="{StaticResource BackgroundBrush}"
+        Foreground="{StaticResource TextBrush}"
+        FontFamily="{StaticResource UiFont}">
+
+    <!-- Пробел = GO, Esc = STOP -->
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Space" Command="{Binding GoCommand}" />
+        <KeyBinding Gesture="Escape" Command="{Binding StopCommand}" />
+    </Window.KeyBindings>
+
+    <Window.Styles>
+        <!-- Тема Fluent при наведении красит кнопку серым — оставляем GO зеленой -->
+        <Style Selector="Button.go:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource GoBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Opacity" Value="0.9" />
+        </Style>
+        <Style Selector="Button.go:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Opacity" Value="0.75" />
+        </Style>
+    </Window.Styles>
+
+    <DockPanel>
+        <!-- Шапка -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1"
+                Padding="16,10">
+            <TextBlock Text="CUEAPP" FontWeight="Bold" FontSize="16" />
+        </Border>
+
+        <!-- Строка статуса -->
+        <Border DockPanel.Dock="Bottom" Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0"
+                Padding="16,8">
+            <TextBlock Text="{Binding Status}" Foreground="{StaticResource TextSecondaryBrush}"
+                       FontFamily="{StaticResource MonoFont}" />
+        </Border>
+
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+            <Button Classes="go" Command="{Binding GoCommand}" Width="320" Height="140"
+                    Background="{StaticResource GoBrush}" Foreground="White"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    CornerRadius="8" FontSize="56" FontWeight="Bold" Content="GO" />
+            <Button Command="{Binding StopCommand}" Width="320" Height="48"
+                    Background="{StaticResource CardBrush}" Foreground="{StaticResource TextBrush}"
+                    BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    CornerRadius="6" FontSize="18" FontWeight="SemiBold" Content="STOP" />
+        </StackPanel>
+    </DockPanel>
+</Window>

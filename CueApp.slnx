@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CueApp.App/CueApp.App.csproj" />
+    <Project Path="src/CueApp.Audio/CueApp.Audio.csproj" />
+    <Project Path="src/CueApp.Control/CueApp.Control.csproj" />
+    <Project Path="src/CueApp.Core/CueApp.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CueApp.Tests/CueApp.Tests.csproj" />
+  </Folder>
+</Solution>

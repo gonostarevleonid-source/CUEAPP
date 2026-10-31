@@ -1,0 +1,65 @@
+<!-- Все цвета приложения (раздел 10 ТЗ). Не хардкодить цвета по месту — брать отсюда. -->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Фоны и линии -->
+    <Color x:Key="BackgroundColor">#0B0B0D</Color>
+    <Color x:Key="PanelColor">#101114</Color>
+    <Color x:Key="Panel2Color">#121316</Color>
+    <Color x:Key="CardColor">#16171A</Color>
+    <Color x:Key="FieldColor">#1A1B1E</Color>
+    <Color x:Key="LineColor">#2A2C31</Color>
+
+    <!-- Текст -->
+    <Color x:Key="TextColor">#E6E6E6</Color>
+    <Color x:Key="TextSecondaryColor">#9A9CA3</Color>
+    <Color x:Key="TextDisabledColor">#6B6D73</Color>
+
+    <!-- Акценты и состояния -->
+    <Color x:Key="AccentColor">#5EA2FF</Color>
+    <Color x:Key="PlayingBackgroundColor">#10203A</Color>
+    <Color x:Key="GoColor">#2E8B47</Color>
+    <Color x:Key="PanicColor">#E5484D</Color>
+    <Color x:Key="PanicTextColor">#FF8A8E</Color>
+    <Color x:Key="WarningYellowColor">#FACC15</Color>
+    <Color x:Key="WarningRedColor">#FF5C5C</Color>
+    <Color x:Key="TimecodeColor">#3FC1E0</Color>
+
+    <!-- Цвета типов кью -->
+    <Color x:Key="CueAudioColor">#2DD4BF</Color>
+    <Color x:Key="CueTimelineColor">#5EA2FF</Color>
+    <Color x:Key="CueFadeColor">#A78BFA</Color>
+    <Color x:Key="CueMidiColor">#F472B6</Color>
+    <Color x:Key="CueOscColor">#4ADE80</Color>
+    <Color x:Key="CueDmxColor">#FACC15</Color>
+    <Color x:Key="CueStopColor">#FF8A8E</Color>
+    <Color x:Key="CueGroupColor">#9A9CA3</Color>
+
+    <!-- Заливки строк кью -->
+    <Color x:Key="FillRedColor">#3A1D20</Color>
+    <Color x:Key="FillOrangeColor">#3A2818</Color>
+    <Color x:Key="FillYellowColor">#3A3318</Color>
+    <Color x:Key="FillGreenColor">#1B3322</Color>
+    <Color x:Key="FillBlueColor">#1A2C42</Color>
+    <Color x:Key="FillPurpleColor">#2E2340</Color>
+    <Color x:Key="FillPinkColor">#3A1F30</Color>
+
+    <!-- Кисти (их и используем в разметке) -->
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}" />
+    <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource PanelColor}" />
+    <SolidColorBrush x:Key="CardBrush" Color="{StaticResource CardColor}" />
+    <SolidColorBrush x:Key="FieldBrush" Color="{StaticResource FieldColor}" />
+    <SolidColorBrush x:Key="LineBrush" Color="{StaticResource LineColor}" />
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+    <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabledColor}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="GoBrush" Color="{StaticResource GoColor}" />
+    <SolidColorBrush x:Key="PanicBrush" Color="{StaticResource PanicColor}" />
+    <SolidColorBrush x:Key="PanicTextBrush" Color="{StaticResource PanicTextColor}" />
+    <SolidColorBrush x:Key="WarningRedBrush" Color="{StaticResource WarningRedColor}" />
+
+    <!-- Шрифты. JetBrains Mono подключим позже; пока — системный моноширинный -->
+    <FontFamily x:Key="UiFont">fonts:Inter#Inter</FontFamily>
+    <FontFamily x:Key="MonoFont">JetBrains Mono, Consolas, Menlo, monospace</FontFamily>
+</ResourceDictionary>
