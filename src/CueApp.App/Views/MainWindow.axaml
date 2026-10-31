@@ -11,11 +11,13 @@
         FontFamily="{StaticResource UiFont}"
         FontSize="13">
 
-    <!-- Пробел = GO, Esc = STOP, Delete = удалить выбранную кью -->
+    <!-- Пробел = GO, Esc = STOP, Delete (на Mac — Cmd+delete) = удалить выбранную кью -->
     <Window.KeyBindings>
         <KeyBinding Gesture="Space" Command="{Binding GoCommand}" />
         <KeyBinding Gesture="Escape" Command="{Binding StopCommand}" />
         <KeyBinding Gesture="Delete" Command="{Binding DeleteCueCommand}" />
+        <!-- Клавиша «delete» на Mac — это Backspace; Meta = Cmd, как в Finder -->
+        <KeyBinding Gesture="Meta+Back" Command="{Binding DeleteCueCommand}" />
     </Window.KeyBindings>
 
     <Window.Styles>
