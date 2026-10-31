@@ -480,3 +480,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# CUEAPP: резервные и временные копии шоу
+*.cue.bak
+*.cue.tmp
