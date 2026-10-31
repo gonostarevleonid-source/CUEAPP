@@ -11,6 +11,9 @@ public sealed class ShowSettings
     /// <summary>Блокировать запуск кью, пока играет таймлайн (Stop и Panic работают всегда).</summary>
     public bool BlockGoWhileTimelinePlaying { get; set; }
 
+    /// <summary>Что делает GO на группе и куда после него переходит выбор.</summary>
+    public GroupGoMode GroupGo { get; set; } = GroupGoMode.RunWholeGroup;
+
     public double PanicFadeSeconds { get; set; } = 0.5;
 
     // --- Отсчет ---
@@ -28,4 +31,13 @@ public sealed class ShowSettings
 
     /// <summary>Клавиша GO (имя клавиши Avalonia).</summary>
     public string GoKey { get; set; } = "Space";
+}
+
+public enum GroupGoMode
+{
+    /// <summary>GO запускает группу целиком, выбор переходит на следующую основную кью.</summary>
+    RunWholeGroup,
+
+    /// <summary>Группа как папка: GO ничего не запускает, выбор переходит на первую подкью.</summary>
+    EnterGroup,
 }

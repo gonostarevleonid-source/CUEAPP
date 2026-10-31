@@ -1,17 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CueApp.Core.Audio;
 using CueApp.Core.Model;
+using CueApp.Core.Playback;
 
 namespace CueApp.App.ViewModels;
 
 public partial class MainViewModel : ViewModelBase
 {
     private readonly IAudioEngine _audio;
+    private readonly Playhead _playhead;
+    private readonly GoGuard _goGuard = new();
+
+    // Монотонные часы для защиты от двойного GO (не зависят от перевода системного времени)
+    private readonly Stopwatch _clock = Stopwatch.StartNew();
 
     public Show Show { get; }
 
@@ -35,12 +42,16 @@ public partial class MainViewModel : ViewModelBase
             oldValue.IsSelected = false;
         if (newValue is not null)
             newValue.IsSelected = true;
+
+        // Клик по кью делает ее выбранной — следующий GO запустит её
+        _playhead.Current = newValue?.Cue;
     }
 
     public MainViewModel(IAudioEngine audio, Show show)
     {
         _audio = audio;
         Show = show;
+        _playhead = new Playhead(show);
         RebuildRows();
         SelectedRow = Rows.FirstOrDefault();
 
@@ -92,14 +103,39 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void Go()
     {
+        if (!_goGuard.TryAccept(_clock.Elapsed, Show.Settings.DoubleGoProtectionMs))
+        {
+            Status = $"Повторный GO проигнорирован (защита {Show.Settings.DoubleGoProtectionMs} мс)";
+            return;
+        }
+
+        Cue? selected = _playhead.Current;
+        Cue? started = _playhead.Go();
+
+        // Выбор в списке переезжает туда, куда ушел плейхед (или пусто в конце списка)
+        SelectedRow = Rows.FirstOrDefault(r => r.Cue == _playhead.Current);
+
+        if (started is null)
+        {
+            Status = selected is GroupCue ? "Вход в группу " + Describe(selected) : "Ничего не выбрано — GO пропущен";
+            return;
+        }
+
+        Status = "GO → " + Describe(started);
+        PlayTestSound(); // пока вместо настоящего запуска кью
+    }
+
+    private static string Describe(Cue cue) =>
+        cue.Number == "" ? cue.Name : cue.Number + " · " + cue.Name;
+
+    private void PlayTestSound()
+    {
         if (!_audio.IsInitialized)
             return;
 
-        // Пока GO только проверяет звук; настоящий запуск кью — следующим шагом
         try
         {
             _audio.PlayTestTone();
-            Status = "Играет тестовый тон 1 кГц";
         }
         catch (Exception ex)
         {
