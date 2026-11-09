@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using CueApp.App.Views;
+using CueApp.Core.Audio;
 using CueApp.Core.Model;
 
 namespace CueApp.App.Services;
@@ -16,10 +17,9 @@ public sealed class DialogService : IDialogService
         Patterns = ["*" + ShowFile.Extension],
     };
 
-    // Форматы, которые BASS читает сам или через системные кодеки (Media Foundation / CoreAudio)
     private static readonly FilePickerFileType AudioFileType = new("Аудиофайлы")
     {
-        Patterns = ["*.wav", "*.aif", "*.aiff", "*.mp3", "*.flac", "*.ogg", "*.m4a"],
+        Patterns = AudioFormats.Extensions.Select(ext => "*" + ext).ToList(),
     };
 
     private readonly Window _owner;

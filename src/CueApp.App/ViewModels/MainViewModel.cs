@@ -142,32 +142,49 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddCue(string type)
     {
-        List<Cue> added;
         if (type == "Track")
         {
-            var files = await _dialogs.PickAudioFilesAsync();
-            added = files.Select(file => (Cue)new TrackCue
-            {
-                FilePath = MediaPaths.ToStored(file, ShowDirectory),
-                Name = Path.GetFileNameWithoutExtension(file),
-            }).ToList();
-        }
-        else
-        {
-            Cue cue = type switch
-            {
-                "Stop" => new StopCue { Name = "Стоп всё" },
-                "Group" => new GroupCue { Name = "Новая группа" },
-                _ => throw new ArgumentException("Неизвестный тип кью: " + type),
-            };
-            added = [cue];
+            InsertCues(CreateTracks(await _dialogs.PickAudioFilesAsync()), SelectedRow?.Cue);
+            return;
         }
 
-        if (added.Count == 0)
+        Cue cue = type switch
+        {
+            "Stop" => new StopCue { Name = "Стоп всё" },
+            "Group" => new GroupCue { Name = "Новая группа" },
+            _ => throw new ArgumentException("Неизвестный тип кью: " + type),
+        };
+        InsertCues([cue], SelectedRow?.Cue);
+    }
+
+    /// <summary>
+    /// Файлы перетащили в кью-лист: каждый аудиофайл → новый трек сразу после anchor
+    /// (null — в конец списка). Не аудио и папки пропускаем.
+    /// </summary>
+    public void AddDroppedFiles(IReadOnlyList<string> paths, Cue? anchor)
+    {
+        var audio = paths.Where(AudioFormats.IsAudioFile).ToList();
+        InsertCues(CreateTracks(audio), anchor);
+
+        int skipped = paths.Count - audio.Count;
+        Status = $"Добавлено треков: {audio.Count}" + (skipped > 0 ? $", пропущено (не аудио): {skipped}" : "");
+    }
+
+    /// <summary>Трек из файла: название = имя файла, путь — относительно папки шоу.</summary>
+    private List<Cue> CreateTracks(IEnumerable<string> files) =>
+        files.Select(file => (Cue)new TrackCue
+        {
+            FilePath = MediaPaths.ToStored(file, ShowDirectory),
+            Name = Path.GetFileNameWithoutExtension(file),
+        }).ToList();
+
+    /// <summary>Вставить кью подряд после anchor и выбрать последнюю вставленную.</summary>
+    private void InsertCues(List<Cue> cues, Cue? anchor)
+    {
+        if (cues.Count == 0)
             return;
 
-        Cue? anchor = SelectedRow?.Cue;
-        foreach (var cue in added)
+        foreach (var cue in cues)
         {
             Show.InsertAfter(anchor, cue);
             anchor = cue;
@@ -175,8 +192,8 @@ public partial class MainViewModel : ViewModelBase
 
         IsDirty = true;
         RebuildRows();
-        SelectedRow = _rowByCue[added[^1]];
-        LoadDurations(added.OfType<TrackCue>());
+        SelectedRow = _rowByCue[cues[^1]];
+        LoadDurations(cues.OfType<TrackCue>());
     }
 
     /// <summary>Удалить выбранную кью (группу — вместе с подкью) и выбрать следующую строку.</summary>

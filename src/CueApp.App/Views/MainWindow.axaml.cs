@@ -1,8 +1,12 @@
 using System;
+using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
+using Avalonia.VisualTree;
 using CueApp.App.ViewModels;
 
 namespace CueApp.App.Views;
@@ -28,6 +32,58 @@ public partial class MainWindow : Window
 
         // Tunnel — видим клавишу раньше, чем список или поле ввода успеют ее обработать
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
+
+        // Аудиофайлы можно перетащить в кью-лист из Проводника / Finder
+        DragDrop.SetAllowDrop(CueList, true);
+        CueList.AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        CueList.AddHandler(DragDrop.DragLeaveEvent, (_, _) => ShowDropTarget(null));
+        CueList.AddHandler(DragDrop.DropEvent, OnDrop);
+    }
+
+    // ---------- Перетаскивание файлов ----------
+
+    // Строка, под которой сейчас нарисована синяя линия «вставить сюда»
+    private CueRowViewModel? _dropTarget;
+
+    private void OnDragOver(object? sender, DragEventArgs e)
+    {
+        if (!e.DataTransfer.Contains(DataFormat.File))
+        {
+            e.DragEffects = DragDropEffects.None;
+            return;
+        }
+
+        e.DragEffects = DragDropEffects.Copy;
+        // Над пустым местом — «в конец списка»: линия под самой последней строкой
+        ShowDropTarget(RowUnderPointer(e) ?? (DataContext as MainViewModel)?.Rows.LastOrDefault());
+    }
+
+    private void OnDrop(object? sender, DragEventArgs e)
+    {
+        CueRowViewModel? row = RowUnderPointer(e);
+        ShowDropTarget(null);
+
+        if (DataContext is not MainViewModel vm || e.DataTransfer.TryGetFiles() is not { } items)
+            return;
+
+        var paths = items.Select(item => item.TryGetLocalPath()).OfType<string>().ToList();
+        // Бросили на строку — треки встают после нее; в пустое место — в конец списка
+        vm.AddDroppedFiles(paths, row?.Cue);
+    }
+
+    /// <summary>Строка кью-листа под курсором; null — курсор над пустым местом.</summary>
+    private static CueRowViewModel? RowUnderPointer(DragEventArgs e) =>
+        (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as CueRowViewModel;
+
+    private void ShowDropTarget(CueRowViewModel? row)
+    {
+        if (_dropTarget == row)
+            return;
+        if (_dropTarget is not null)
+            _dropTarget.IsDropTarget = false;
+        _dropTarget = row;
+        if (row is not null)
+            row.IsDropTarget = true;
     }
 
     private void AddHotkey(KeyGesture gesture, Func<MainViewModel, System.Windows.Input.ICommand> command)

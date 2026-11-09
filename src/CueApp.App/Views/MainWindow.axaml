@@ -266,6 +266,9 @@
                                 </Grid>
                                 <!-- Обводка выбранной строки (белая — в стилях выше) -->
                                 <Border Classes="outline" Classes.selected="{Binding IsSelected}" />
+                                <!-- Перетаскивание файлов: новые треки встанут под этой линией -->
+                                <Border Height="3" VerticalAlignment="Bottom" Background="{StaticResource AccentBrush}"
+                                        IsVisible="{Binding IsDropTarget}" />
                             </Panel>
                         </Border>
                     </DataTemplate>

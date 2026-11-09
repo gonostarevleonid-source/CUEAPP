@@ -51,6 +51,10 @@ public partial class CueRowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(Duration))]
     public partial string? LiveTime { get; set; }
 
+    /// <summary>Над списком тащат файлы, и они встанут сразу после этой строки (синяя линия снизу).</summary>
+    [ObservableProperty]
+    public partial bool IsDropTarget { get; set; }
+
     public bool IsSubCue => Depth > 0;
 
     /// <summary>Кью поменяли в инспекторе — перечитать все колонки строки.</summary>
