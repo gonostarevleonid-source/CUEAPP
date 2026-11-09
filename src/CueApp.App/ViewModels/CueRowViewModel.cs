@@ -85,6 +85,9 @@ public partial class CueRowViewModel : ViewModelBase
         _ => "CueGroupBrush",
     });
 
+    /// <summary>Колонка «Старт TC»: таймкод начала файла трека; у Stop и Group — пусто.</summary>
+    public string StartTimecode => Cue is TrackCue track ? track.StartTimecode.ToString(track.FrameRate) : "";
+
     /// <summary>Колонка «Длительность»: во время игры — отсчет «осталось», иначе длина с учетом trim.</summary>
     public string Duration => LiveTime ?? (IsMissingFile ? "нет файла" : StaticDuration);
 

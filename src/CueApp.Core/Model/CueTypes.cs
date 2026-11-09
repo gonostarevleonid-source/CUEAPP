@@ -1,3 +1,5 @@
+using CueApp.Core.Time;
+
 namespace CueApp.Core.Model;
 
 /// <summary>
@@ -24,6 +26,15 @@ public sealed class TrackCue : Cue
 
     /// <summary>Имена выходов из таблицы выходов проекта («Main L/R», «Sub»...).</summary>
     public List<string> Outputs { get; set; } = new();
+
+    /// <summary>
+    /// Таймкод начала ФАЙЛА: TC = старт TC + позиция в файле. Привязан ко времени файла,
+    /// поэтому trim не сдвигает свет в grandMA.
+    /// </summary>
+    public Timecode StartTimecode { get; set; } = new(1, 0, 0, 0);
+
+    /// <summary>Частота таймкода этого трека (при создании берется из настроек проекта).</summary>
+    public FrameRate FrameRate { get; set; } = FrameRate.Fps25;
 }
 
 /// <summary>Остановка одной кью или всех.</summary>

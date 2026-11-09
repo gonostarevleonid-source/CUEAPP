@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using CueApp.Core;
 using CueApp.Core.Model;
+using CueApp.Core.Time;
 
 namespace CueApp.App.ViewModels.Inspector;
 
@@ -84,6 +85,41 @@ public sealed partial class TrackDetailsViewModel : EditorViewModelBase
     {
         get => FormatNumber(_cue.VolumeDb);
         set => EditNumber(value, _cue.VolumeDb, v => _cue.VolumeDb = Math.Min(v, MaxVolumeDb));
+    }
+
+    // --- Таймкод ---
+
+    /// <summary>Таймкод начала файла: «01:00:00:00» (для 29.97 DF — «01:00:00;00»). Неверный ввод откатывается.</summary>
+    public string StartTimecode
+    {
+        get => _cue.StartTimecode.ToString(_cue.FrameRate);
+        set
+        {
+            if (Timecode.TryParse(value, _cue.FrameRate, out var tc) && tc != _cue.StartTimecode)
+            {
+                _cue.StartTimecode = tc;
+                Changed();
+            }
+            Refresh(nameof(StartTimecode));
+        }
+    }
+
+    public IReadOnlyList<Choice<FrameRate>> FrameRates { get; } =
+        CueApp.Core.Time.FrameRates.All.Select(r => new Choice<FrameRate>(r, r.Label() + " fps")).ToList();
+
+    public FrameRate FrameRate
+    {
+        get => _cue.FrameRate;
+        set
+        {
+            if (value == _cue.FrameRate)
+                return;
+            _cue.FrameRate = value;
+            // Кадр 29 при 25 fps не существует — подгоняем старт под новую частоту
+            _cue.StartTimecode = _cue.StartTimecode.Normalize(value);
+            Changed();
+            OnPropertyChanged(nameof(StartTimecode));
+        }
     }
 }
 

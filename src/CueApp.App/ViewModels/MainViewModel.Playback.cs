@@ -196,6 +196,27 @@ public partial class MainViewModel
         }
     }
 
+    /// <summary>Длина файла трека, если уже известна.</summary>
+    private double? FileDurationOf(TrackCue cue) =>
+        _fileDurations.TryGetValue(cue, out double duration) ? duration : null;
+
+    /// <summary>Узнать длину файла сразу (нужно для стартового TC нового трека). WAV читается мгновенно.</summary>
+    private void ReadDurationNow(TrackCue cue)
+    {
+        if (!_audio.IsInitialized || cue.FilePath == "")
+            return;
+
+        try
+        {
+            _fileDurations[cue] = _audio.GetDuration(MediaPaths.Resolve(cue.FilePath, ShowDirectory));
+            _missingFiles.Remove(cue);
+        }
+        catch
+        {
+            _missingFiles.Add(cue); // покажем «нет файла»
+        }
+    }
+
     /// <summary>Файл кью сменили в инспекторе — забыть старую длину и узнать новую.</summary>
     private void ReloadDuration(TrackCue cue)
     {

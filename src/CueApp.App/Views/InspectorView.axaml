@@ -138,6 +138,21 @@
                                     <TextBox Grid.Column="1" Classes="field mono"
                                              Text="{Binding VolumeDb, UpdateSourceTrigger=LostFocus}" />
                                 </Grid>
+
+                                <!-- Таймкод трека: TC = старт + позиция в файле -->
+                                <TextBlock Classes="section" Text="ТАЙМКОД" Margin="0,12,0,8"
+                                           Foreground="{StaticResource TimecodeBrush}" />
+                                <Grid Classes="row" ColumnDefinitions="120,*">
+                                    <TextBlock Text="Старт TC" />
+                                    <TextBox Grid.Column="1" Classes="field mono" Foreground="{StaticResource TimecodeBrush}"
+                                             Text="{Binding StartTimecode, UpdateSourceTrigger=LostFocus}" />
+                                </Grid>
+                                <Grid Classes="row" ColumnDefinitions="120,*">
+                                    <TextBlock Text="Частота" />
+                                    <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding FrameRates}"
+                                              SelectedValueBinding="{Binding Value}" SelectedValue="{Binding FrameRate}"
+                                              DisplayMemberBinding="{Binding Label}" />
+                                </Grid>
                             </StackPanel>
                         </DataTemplate>
 

@@ -215,12 +215,13 @@
             <Border DockPanel.Dock="Top" Background="{StaticResource TableHeaderBrush}"
                     BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1"
                     Padding="0,8">
-                <Grid ColumnDefinitions="6,54,92,*,110" TextElement.FontSize="11"
+                <Grid ColumnDefinitions="6,54,92,*,120,110" TextElement.FontSize="11"
                       TextElement.Foreground="{StaticResource TextSecondaryBrush}">
                     <TextBlock Grid.Column="1" Text="№" Margin="12,0,0,0" />
                     <TextBlock Grid.Column="2" Text="ТИП" LetterSpacing="0.6" />
                     <TextBlock Grid.Column="3" Text="НАЗВАНИЕ" LetterSpacing="0.6" />
-                    <TextBlock Grid.Column="4" Text="ДЛИТЕЛЬНОСТЬ" LetterSpacing="0.6" />
+                    <TextBlock Grid.Column="4" Text="СТАРТ TC" LetterSpacing="0.6" />
+                    <TextBlock Grid.Column="5" Text="ДЛИТЕЛЬНОСТЬ" LetterSpacing="0.6" />
                 </Grid>
             </Border>
 
@@ -235,7 +236,7 @@
                                 BorderBrush="{StaticResource RowLineBrush}" BorderThickness="0,0,0,1"
                                 MinHeight="44">
                             <Panel>
-                                <Grid ColumnDefinitions="6,54,92,*,110">
+                                <Grid ColumnDefinitions="6,54,92,*,120,110">
                                     <!-- Тонкая вертикальная линия у подкью -->
                                     <Rectangle Width="2" HorizontalAlignment="Left"
                                                Fill="{StaticResource SubCueGuideBrush}"
@@ -259,7 +260,10 @@
                                                VerticalAlignment="Center" Margin="0,0,8,0"
                                                TextTrimming="CharacterEllipsis" />
 
-                                    <TextBlock Grid.Column="4" Classes="mono duration" VerticalAlignment="Center"
+                                    <TextBlock Grid.Column="4" Classes="mono" VerticalAlignment="Center"
+                                               Foreground="{StaticResource TimecodeBrush}"
+                                               Text="{Binding StartTimecode}" />
+                                    <TextBlock Grid.Column="5" Classes="mono duration" VerticalAlignment="Center"
                                                Classes.playing="{Binding IsPlaying}"
                                                Classes.missing="{Binding IsMissingFile}"
                                                Text="{Binding Duration}" />

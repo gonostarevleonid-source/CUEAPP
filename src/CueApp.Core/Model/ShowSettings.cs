@@ -1,3 +1,5 @@
+using CueApp.Core.Time;
+
 namespace CueApp.Core.Model;
 
 /// <summary>
@@ -15,6 +17,20 @@ public sealed class ShowSettings
     public double StopFadeSeconds { get; set; } = 1;
 
     public double PanicFadeSeconds { get; set; } = 0.5;
+
+    // --- Таймкод ---
+
+    /// <summary>Частота для новых треков.</summary>
+    public FrameRate DefaultFrameRate { get; set; } = FrameRate.Fps25;
+
+    /// <summary>Старт TC первого трека в шоу.</summary>
+    public Timecode FirstTrackTimecode { get; set; } = new(1, 0, 0, 0);
+
+    /// <summary>Следующий трек стартует через столько минут после конца предыдущего…</summary>
+    public int StartTimecodeGapMinutes { get; set; } = 5;
+
+    /// <summary>…с округлением вверх до целого числа таких минут (01:08:47 → 01:10:00:00).</summary>
+    public int StartTimecodeRoundMinutes { get; set; } = 5;
 
     // --- Отсчет ---
 

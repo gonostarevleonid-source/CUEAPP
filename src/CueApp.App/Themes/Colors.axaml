@@ -64,6 +64,7 @@
     <SolidColorBrush x:Key="PanicBrush" Color="{StaticResource PanicColor}" />
     <SolidColorBrush x:Key="PanicTextBrush" Color="{StaticResource PanicTextColor}" />
     <SolidColorBrush x:Key="WarningRedBrush" Color="{StaticResource WarningRedColor}" />
+    <SolidColorBrush x:Key="TimecodeBrush" Color="{StaticResource TimecodeColor}" />
     <SolidColorBrush x:Key="Panel2Brush" Color="{StaticResource Panel2Color}" />
     <SolidColorBrush x:Key="PlayingBackgroundBrush" Color="{StaticResource PlayingBackgroundColor}" />
 

@@ -12,6 +12,7 @@ using CueApp.App.ViewModels.Inspector;
 using CueApp.Core.Audio;
 using CueApp.Core.Model;
 using CueApp.Core.Playback;
+using CueApp.Core.Time;
 
 namespace CueApp.App.ViewModels;
 
@@ -190,10 +191,18 @@ public partial class MainViewModel : ViewModelBase
             anchor = cue;
         }
 
+        // Новым трекам — частота из настроек и стартовый TC по правилу «после конца предыдущего».
+        // Правилу нужна длина файла, поэтому читаем ее сразу (по порядку: следующий считается от предыдущего)
+        foreach (var track in cues.OfType<TrackCue>())
+        {
+            track.FrameRate = Show.Settings.DefaultFrameRate;
+            ReadDurationNow(track);
+            track.StartTimecode = StartTimecodeRule.Suggest(Show, track, FileDurationOf).Normalize(track.FrameRate);
+        }
+
         IsDirty = true;
         RebuildRows();
         SelectedRow = _rowByCue[cues[^1]];
-        LoadDurations(cues.OfType<TrackCue>());
     }
 
     /// <summary>Удалить выбранную кью (группу — вместе с подкью) и выбрать следующую строку.</summary>
