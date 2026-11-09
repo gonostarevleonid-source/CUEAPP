@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CueApp.App.Services;
+using CueApp.App.ViewModels.Inspector;
 using CueApp.Core.Audio;
 using CueApp.Core.Model;
 using CueApp.Core.Playback;
@@ -51,6 +52,10 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial CueRowViewModel? SelectedRow { get; set; }
 
+    /// <summary>Заметки и инспектор выбранной кью; null — ничего не выбрано.</summary>
+    [ObservableProperty]
+    public partial InspectorViewModel? Inspector { get; private set; }
+
     [ObservableProperty]
     public partial string Status { get; set; } = "";
 
@@ -76,6 +81,36 @@ public partial class MainViewModel : ViewModelBase
 
         // Клик по кью делает ее выбранной — следующий GO запустит её
         _playhead.Current = newValue?.Cue;
+
+        // Инспектор и заметки показывают выбранную кью
+        if (Inspector?.Cue != newValue?.Cue)
+            Inspector = newValue is null ? null : CreateInspector(newValue.Cue);
+    }
+
+    private InspectorViewModel CreateInspector(Cue cue)
+    {
+        // После каждой правки: шоу изменено, строка списка перечитывает колонки
+        void Changed()
+        {
+            IsDirty = true;
+            if (_rowByCue.TryGetValue(cue, out var row))
+                row.Refresh();
+        }
+
+        object? details = cue switch
+        {
+            TrackCue track => new TrackDetailsViewModel(track, Changed, PickAudioFileForCueAsync, () => ReloadDuration(track)),
+            StopCue stop => new StopDetailsViewModel(stop, Show, Changed),
+            _ => null,
+        };
+        return new InspectorViewModel(cue, Show, Changed, message => Status = message, details);
+    }
+
+    /// <summary>«Выбрать…» в инспекторе трека: один файл, путь сразу в виде для шоу.</summary>
+    private async Task<string?> PickAudioFileForCueAsync()
+    {
+        var files = await _dialogs.PickAudioFilesAsync();
+        return files.Count == 0 ? null : MediaPaths.ToStored(files[0], ShowDirectory);
     }
 
     public MainViewModel(IAudioEngine audio, IDialogService dialogs)
@@ -102,16 +137,16 @@ public partial class MainViewModel : ViewModelBase
 
     /// <summary>
     /// Добавить кью нужного типа сразу после выбранной.
-    /// Audio — сначала выбрать файлы (можно несколько: будет несколько кью подряд); отмена — ничего не добавляем.
+    /// Трек — сначала выбрать файлы (можно несколько: будет несколько треков подряд); отмена — ничего не добавляем.
     /// </summary>
     [RelayCommand]
     private async Task AddCue(string type)
     {
         List<Cue> added;
-        if (type == "Audio")
+        if (type == "Track")
         {
             var files = await _dialogs.PickAudioFilesAsync();
-            added = files.Select(file => (Cue)new AudioCue
+            added = files.Select(file => (Cue)new TrackCue
             {
                 FilePath = MediaPaths.ToStored(file, ShowDirectory),
                 Name = Path.GetFileNameWithoutExtension(file),
@@ -121,13 +156,10 @@ public partial class MainViewModel : ViewModelBase
         {
             Cue cue = type switch
             {
-                "Fade" => new FadeCue(),
-                "Stop" => new StopCue(),
-                "Wait" => new WaitCue(),
-                "Group" => new GroupCue(),
+                "Stop" => new StopCue { Name = "Стоп всё" },
+                "Group" => new GroupCue { Name = "Новая группа" },
                 _ => throw new ArgumentException("Неизвестный тип кью: " + type),
             };
-            cue.Name = "Новая " + type;
             added = [cue];
         }
 
@@ -144,7 +176,7 @@ public partial class MainViewModel : ViewModelBase
         IsDirty = true;
         RebuildRows();
         SelectedRow = _rowByCue[added[^1]];
-        LoadDurations(added.OfType<AudioCue>());
+        LoadDurations(added.OfType<TrackCue>());
     }
 
     /// <summary>Удалить выбранную кью (группу — вместе с подкью) и выбрать следующую строку.</summary>
@@ -266,7 +298,7 @@ public partial class MainViewModel : ViewModelBase
         IsDirty = false;
         RebuildRows();
         SelectedRow = Rows.FirstOrDefault();
-        LoadDurations(show.AllCues().OfType<AudioCue>());
+        LoadDurations(show.AllCues().OfType<TrackCue>());
     }
 
     /// <summary>Пересобирает плоский список строк из дерева кью шоу.</summary>

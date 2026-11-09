@@ -11,11 +11,11 @@ public class ShowModelTests
         {
             Children =
             {
-                new WaitCue(),
-                new GroupCue { Children = { new WaitCue() } },
+                new StopCue(),
+                new GroupCue { Children = { new StopCue() } },
             },
         };
-        var show = new Show { Cues = { new AudioCue(), new WaitCue(), group } };
+        var show = new Show { Cues = { new TrackCue(), new StopCue(), group } };
 
         show.Renumber();
 
@@ -25,10 +25,10 @@ public class ShowModelTests
     [Fact]
     public void AllCues_GoesTopToBottomIncludingSubCues()
     {
-        var a = new WaitCue { Name = "A" };
-        var sub = new WaitCue { Name = "B.1" };
+        var a = new StopCue { Name = "A" };
+        var sub = new StopCue { Name = "B.1" };
         var b = new GroupCue { Name = "B", Children = { sub } };
-        var c = new WaitCue { Name = "C" };
+        var c = new StopCue { Name = "C" };
         var show = new Show { Cues = { a, b, c } };
 
         Assert.Equal(["A", "B", "B.1", "C"], show.AllCues().Select(x => x.Name));

@@ -1,0 +1,166 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:CueApp.App.ViewModels.Inspector"
+             x:Class="CueApp.App.Views.InspectorView"
+             x:DataType="vm:InspectorViewModel">
+
+    <UserControl.Styles>
+        <!-- Строка формы: подпись слева (120 px), поле справа; колонки задаются у каждой строки -->
+        <Style Selector="Grid.row">
+            <Setter Property="Margin" Value="0,0,0,8" />
+        </Style>
+        <Style Selector="Grid.row > TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="TextBlock.section">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="LetterSpacing" Value="1" />
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+        </Style>
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{StaticResource TextDisabledBrush}" />
+        </Style>
+        <!-- Образцы цвета: выбранный — белое кольцо -->
+        <Style Selector="Button.swatch">
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{StaticResource SubCueGuideBrush}" />
+        </Style>
+        <Style Selector="Button.swatch.selected">
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BorderBrush" Value="{StaticResource TextBrush}" />
+        </Style>
+        <Style Selector="Button.swatch:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{Binding $parent[Button].Background}" />
+            <Setter Property="BorderBrush" Value="{StaticResource TextSecondaryBrush}" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
+            <!-- ЗАМЕТКИ -->
+            <Border Padding="16,14" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="section" Text="{Binding NotesHeader}" />
+                    <TextBox Classes="field" Text="{Binding Notes}" AcceptsReturn="True" TextWrapping="Wrap"
+                             MinHeight="88" FontFamily="{StaticResource UiFont}"
+                             PlaceholderText="Заметки к кью: когда давать GO, на что смотреть…" />
+                </StackPanel>
+            </Border>
+
+            <!-- ВКЛАДКА ТИПА КЬЮ («Трек · 2», «Stop · 5») -->
+            <StackPanel Margin="16,14">
+                <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Margin="0,0,0,12">
+                    <Border BorderBrush="{StaticResource AccentBrush}" BorderThickness="0,0,0,2"
+                            HorizontalAlignment="Left" Padding="10,8">
+                        <TextBlock Text="{Binding MainHeader}" FontWeight="SemiBold" FontSize="12" />
+                    </Border>
+                </Border>
+
+                <Grid Classes="row" ColumnDefinitions="120,*">
+                    <TextBlock Text="Тип" />
+                    <TextBlock Grid.Column="1" Text="{Binding TypeLabel}" Classes="mono" FontSize="12"
+                               Foreground="{StaticResource TextBrush}" />
+                </Grid>
+                <Grid Classes="row" ColumnDefinitions="120,*">
+                    <TextBlock Text="Номер" />
+                    <TextBox Grid.Column="1" Classes="field mono"
+                             Text="{Binding Number, UpdateSourceTrigger=LostFocus}" PlaceholderText="без номера" />
+                </Grid>
+                <Grid Classes="row" ColumnDefinitions="120,*">
+                    <TextBlock Text="Название" />
+                    <TextBox Grid.Column="1" Classes="field" FontFamily="{StaticResource UiFont}"
+                             Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
+                </Grid>
+                <Grid Classes="row" ColumnDefinitions="120,*">
+                    <TextBlock Text="Цвет кью" />
+                    <ItemsControl Grid.Column="1" ItemsSource="{Binding Swatches}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel ItemSpacing="6" LineSpacing="6" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SwatchViewModel">
+                                <Button Classes="swatch" Classes.selected="{Binding IsSelected}"
+                                        Background="{Binding Brush}" ToolTip.Tip="{Binding Name}"
+                                        Command="{Binding $parent[ItemsControl].((vm:InspectorViewModel)DataContext).SetColorCommand}"
+                                        CommandParameter="{Binding Color}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+
+                <!-- Поля конкретного типа кью -->
+                <ContentControl Content="{Binding Details}" Margin="0,8,0,0">
+                    <ContentControl.DataTemplates>
+                        <DataTemplate DataType="vm:TrackDetailsViewModel">
+                            <StackPanel>
+                                <Grid Classes="row" ColumnDefinitions="120,*">
+                                    <TextBlock Text="Файл" />
+                                    <DockPanel Grid.Column="1">
+                                        <Button DockPanel.Dock="Right" Classes="tool" Margin="6,0,0,0"
+                                                Content="Выбрать…" Command="{Binding PickFileCommand}" />
+                                        <TextBlock Text="{Binding FileLabel}" Classes="mono" FontSize="12"
+                                                   VerticalAlignment="Center" TextTrimming="PrefixCharacterEllipsis"
+                                                   ToolTip.Tip="{Binding FileLabel}" />
+                                    </DockPanel>
+                                </Grid>
+                                <Grid Classes="row" ColumnDefinitions="120,*">
+                                    <TextBlock Text="Trim in" />
+                                    <TextBox Grid.Column="1" Classes="field mono"
+                                             Text="{Binding TrimIn, UpdateSourceTrigger=LostFocus}" />
+                                </Grid>
+                                <Grid Classes="row" ColumnDefinitions="120,*">
+                                    <TextBlock Text="Trim out" />
+                                    <TextBox Grid.Column="1" Classes="field mono" PlaceholderText="до конца файла"
+                                             Text="{Binding TrimOut, UpdateSourceTrigger=LostFocus}" />
+                                </Grid>
+                                <Grid Classes="row" ColumnDefinitions="120,*">
+                                    <TextBlock Text="Fade in" />
+                                    <TextBox Grid.Column="1" Classes="field mono"
+                                             Text="{Binding FadeIn, UpdateSourceTrigger=LostFocus}" />
+                                </Grid>
+                                <Grid Classes="row" ColumnDefinitions="120,*">
+                                    <TextBlock Text="Fade out" />
+                                    <TextBox Grid.Column="1" Classes="field mono"
+                                             Text="{Binding FadeOut, UpdateSourceTrigger=LostFocus}" />
+                                </Grid>
+                                <Grid Classes="row" ColumnDefinitions="120,*">
+                                    <TextBlock Text="Громкость, дБ" />
+                                    <TextBox Grid.Column="1" Classes="field mono"
+                                             Text="{Binding VolumeDb, UpdateSourceTrigger=LostFocus}" />
+                                </Grid>
+                            </StackPanel>
+                        </DataTemplate>
+
+                        <DataTemplate DataType="vm:StopDetailsViewModel">
+                            <StackPanel>
+                                <Grid Classes="row" ColumnDefinitions="120,*">
+                                    <TextBlock Text="Цель" />
+                                    <ComboBox Grid.Column="1" Classes="field" ItemsSource="{Binding Targets}"
+                                              SelectedItem="{Binding Target}" DisplayMemberBinding="{Binding Label}" />
+                                </Grid>
+                                <Grid Classes="row" ColumnDefinitions="120,*">
+                                    <TextBlock Text="Фейд" />
+                                    <TextBox Grid.Column="1" Classes="field mono"
+                                             Text="{Binding FadeOut, UpdateSourceTrigger=LostFocus}" />
+                                </Grid>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ContentControl.DataTemplates>
+                </ContentControl>
+
+                <TextBlock Classes="hint" Margin="0,12,0,0" TextWrapping="Wrap"
+                           Text="Время: 65.5 или 1:05.5. Enter — применить и вернуться к списку." />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

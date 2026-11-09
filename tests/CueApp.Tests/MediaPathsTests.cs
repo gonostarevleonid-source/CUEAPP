@@ -44,7 +44,7 @@ public class MediaPathsTests
     [Fact]
     public void Relocate_SaveAsToOtherFolder_StillPointsToSameFile()
     {
-        var cue = new AudioCue { FilePath = "audio/overture.wav" };
+        var cue = new TrackCue { FilePath = "audio/overture.wav" };
         var show = new Show { Cues = { new GroupCue { Children = { cue } } } };
         string newDir = Path.Combine(Root, "Backup");
 
@@ -57,7 +57,7 @@ public class MediaPathsTests
     [Fact]
     public void Relocate_FirstSave_TurnsFullPathsIntoRelative()
     {
-        var cue = new AudioCue { FilePath = AudioFile };
+        var cue = new TrackCue { FilePath = AudioFile };
         var show = new Show { Cues = { cue } };
 
         MediaPaths.Relocate(show, oldShowDirectory: null, ShowDir);

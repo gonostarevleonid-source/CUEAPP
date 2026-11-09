@@ -2,6 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CueApp.App.ViewModels"
         xmlns:app="using:CueApp.App"
+        xmlns:views="using:CueApp.App.Views"
+        xmlns:insp="using:CueApp.App.ViewModels.Inspector"
         x:Class="CueApp.App.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
@@ -12,14 +14,11 @@
         FontFamily="{StaticResource UiFont}"
         FontSize="13">
 
-    <!-- Пробел = GO, Esc = STOP, Delete (на Mac — Cmd+delete) = удалить выбранную кью -->
+    <!-- Esc = STOP работает всегда, даже в поле ввода.
+         Пробел (GO), Delete и горячие клавиши меню «Файл» — в MainWindow.axaml.cs:
+         пробел и Delete не должны срабатывать, пока вы печатаете в поле инспектора -->
     <Window.KeyBindings>
-        <KeyBinding Gesture="Space" Command="{Binding GoCommand}" />
         <KeyBinding Gesture="Escape" Command="{Binding StopCommand}" />
-        <KeyBinding Gesture="Delete" Command="{Binding DeleteCueCommand}" />
-        <!-- Клавиша «delete» на Mac — это Backspace; Meta = Cmd, как в Finder -->
-        <KeyBinding Gesture="Meta+Back" Command="{Binding DeleteCueCommand}" />
-        <!-- Горячие клавиши меню «Файл» добавляются в MainWindow.axaml.cs -->
     </Window.KeyBindings>
 
     <!-- Меню: на Mac — в верхней строке экрана, на Windows — полоской в окне (NativeMenuBar ниже) -->
@@ -60,26 +59,6 @@
             <Setter Property="Background" Value="#3A1416" />
             <Setter Property="BorderBrush" Value="{StaticResource PanicBrush}" />
             <Setter Property="Foreground" Value="{StaticResource PanicTextBrush}" />
-        </Style>
-
-        <Style Selector="Path.continue">
-            <Setter Property="Stroke" Value="{StaticResource AccentBrush}" />
-            <Setter Property="StrokeThickness" Value="1.8" />
-            <Setter Property="StrokeLineCap" Value="Round" />
-            <Setter Property="StrokeJoin" Value="Round" />
-            <Setter Property="Width" Value="12" />
-            <Setter Property="Height" Value="15" />
-            <Setter Property="HorizontalAlignment" Value="Left" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="4,0,0,0" />
-        </Style>
-
-        <!-- Колонки времени: моноширинный шрифт -->
-        <Style Selector="TextBlock.mono">
-            <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
-        </Style>
-        <Style Selector="TextBlock.secondary">
-            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}" />
         </Style>
 
         <!-- Кью-лист: убираем стандартную подсветку Fluent, рисуем выделение сами -->
@@ -188,28 +167,16 @@
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <TextBlock Text="Добавить:" Classes="secondary" FontSize="12"
                                VerticalAlignment="Center" Margin="0,0,6,0" />
-                    <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Audio">
+                    <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Track">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <Border Width="8" Height="8" CornerRadius="2" Background="{StaticResource CueAudioBrush}" />
-                            <TextBlock Text="Audio" />
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Fade">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <Border Width="8" Height="8" CornerRadius="2" Background="{StaticResource CueFadeBrush}" />
-                            <TextBlock Text="Fade" />
+                            <Border Width="8" Height="8" CornerRadius="2" Background="{StaticResource CueTrackBrush}" />
+                            <TextBlock Text="Трек" />
                         </StackPanel>
                     </Button>
                     <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Stop">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Border Width="8" Height="8" CornerRadius="2" Background="{StaticResource CueStopBrush}" />
                             <TextBlock Text="Stop" />
-                        </StackPanel>
-                    </Button>
-                    <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Wait">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <Border Width="8" Height="8" CornerRadius="2" Background="{StaticResource CueGroupBrush}" />
-                            <TextBlock Text="Wait" />
                         </StackPanel>
                     </Button>
                     <Button Classes="tool" Command="{Binding AddCueCommand}" CommandParameter="Group">
@@ -224,25 +191,42 @@
             </DockPanel>
         </Border>
 
+        <Grid ColumnDefinitions="*,360">
+        <!-- СПРАВА: заметки + инспектор выбранной кью -->
+        <Border Grid.Column="1" Background="{StaticResource PanelBrush}"
+                BorderBrush="{StaticResource LineBrush}" BorderThickness="1,0,0,0">
+            <Panel>
+                <TextBlock Text="Выберите кью, чтобы увидеть заметки и настройки"
+                           Classes="secondary" FontSize="12" TextWrapping="Wrap" Margin="16"
+                           IsVisible="{Binding Inspector, Converter={x:Static ObjectConverters.IsNull}}" />
+                <ContentControl Content="{Binding Inspector}">
+                    <ContentControl.DataTemplates>
+                        <DataTemplate DataType="insp:InspectorViewModel">
+                            <views:InspectorView />
+                        </DataTemplate>
+                    </ContentControl.DataTemplates>
+                </ContentControl>
+            </Panel>
+        </Border>
+
         <!-- КЬЮ-ЛИСТ -->
-        <DockPanel>
+        <DockPanel Grid.Column="0">
             <!-- Заголовок таблицы: те же колонки, что у строк -->
             <Border DockPanel.Dock="Top" Background="{StaticResource TableHeaderBrush}"
                     BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1"
                     Padding="0,8">
-                <Grid ColumnDefinitions="6,54,92,*,70,80,70,48" TextElement.FontSize="11"
+                <Grid ColumnDefinitions="6,54,92,*,110" TextElement.FontSize="11"
                       TextElement.Foreground="{StaticResource TextSecondaryBrush}">
                     <TextBlock Grid.Column="1" Text="№" Margin="12,0,0,0" />
                     <TextBlock Grid.Column="2" Text="ТИП" LetterSpacing="0.6" />
                     <TextBlock Grid.Column="3" Text="НАЗВАНИЕ" LetterSpacing="0.6" />
-                    <TextBlock Grid.Column="4" Text="PRE" LetterSpacing="0.6" />
-                    <TextBlock Grid.Column="5" Text="ДЛИТ." LetterSpacing="0.6" />
-                    <TextBlock Grid.Column="6" Text="POST" LetterSpacing="0.6" />
-                    <TextBlock Grid.Column="7" Text="CONT" LetterSpacing="0.6" />
+                    <TextBlock Grid.Column="4" Text="ДЛИТЕЛЬНОСТЬ" LetterSpacing="0.6" />
                 </Grid>
             </Border>
 
-            <ListBox Classes="cues" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}"
+            <!-- Focusable — чтобы было куда увести фокус из поля ввода, даже когда список пуст -->
+            <ListBox x:Name="CueList" Classes="cues" Focusable="True"
+                     ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}"
                      Background="Transparent">
                 <ListBox.ItemTemplate>
                     <DataTemplate x:DataType="vm:CueRowViewModel">
@@ -251,7 +235,7 @@
                                 BorderBrush="{StaticResource RowLineBrush}" BorderThickness="0,0,0,1"
                                 MinHeight="44">
                             <Panel>
-                                <Grid ColumnDefinitions="6,54,92,*,70,80,70,48">
+                                <Grid ColumnDefinitions="6,54,92,*,110">
                                     <!-- Тонкая вертикальная линия у подкью -->
                                     <Rectangle Width="2" HorizontalAlignment="Left"
                                                Fill="{StaticResource SubCueGuideBrush}"
@@ -275,19 +259,10 @@
                                                VerticalAlignment="Center" Margin="0,0,8,0"
                                                TextTrimming="CharacterEllipsis" />
 
-                                    <TextBlock Grid.Column="4" Classes="mono secondary" VerticalAlignment="Center"
-                                               Text="{Binding PreWait}" />
-                                    <TextBlock Grid.Column="5" Classes="mono duration" VerticalAlignment="Center"
+                                    <TextBlock Grid.Column="4" Classes="mono duration" VerticalAlignment="Center"
                                                Classes.playing="{Binding IsPlaying}"
                                                Classes.missing="{Binding IsMissingFile}"
                                                Text="{Binding Duration}" />
-                                    <TextBlock Grid.Column="6" Classes="mono secondary" VerticalAlignment="Center"
-                                               Text="{Binding PostWait}" />
-                                    <!-- Continue: ↓ — auto-continue, ↓ с чертой — auto-follow -->
-                                    <Path Grid.Column="7" Classes="continue" IsVisible="{Binding IsAutoContinue}"
-                                          Data="M 6,1 L 6,13 M 1.5,8.5 L 6,13 L 10.5,8.5" />
-                                    <Path Grid.Column="7" Classes="continue" IsVisible="{Binding IsAutoFollow}"
-                                          Data="M 6,1 L 6,11 M 1.5,6.5 L 6,11 L 10.5,6.5 M 1,14 L 11,14" />
                                 </Grid>
                                 <!-- Обводка выбранной строки (белая — в стилях выше) -->
                                 <Border Classes="outline" Classes.selected="{Binding IsSelected}" />
@@ -297,5 +272,6 @@
                 </ListBox.ItemTemplate>
             </ListBox>
         </DockPanel>
+        </Grid>
     </DockPanel>
 </Window>

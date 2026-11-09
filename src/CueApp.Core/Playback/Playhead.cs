@@ -28,25 +28,14 @@ public sealed class Playhead
         if (cue is null)
             return null;
 
-        // Группа как папка: GO только «входит» в нее
-        if (cue is GroupCue group && _show.Settings.GroupGo == GroupGoMode.EnterGroup)
+        // Группа — только для структуры шоу: GO ничего не запускает, выбор переходит на первую подкью
+        if (cue is GroupCue group)
         {
             Current = group.Children.FirstOrDefault() ?? NextOutside(group);
             return null;
         }
 
-        Current = NextOutside(EndOfContinueChain(cue));
-        return cue;
-    }
-
-    /// <summary>
-    /// Если у кью стоит auto-continue / auto-follow, следующая за ней запустится сама —
-    /// плейхед перепрыгивает всю такую цепочку (в пределах своего уровня).
-    /// </summary>
-    private Cue EndOfContinueChain(Cue cue)
-    {
-        while (cue.Continue != ContinueMode.None && NextSibling(cue) is { } next)
-            cue = next;
+        Current = NextOutside(cue);
         return cue;
     }
 

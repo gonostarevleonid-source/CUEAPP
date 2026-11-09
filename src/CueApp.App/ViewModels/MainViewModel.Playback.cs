@@ -11,7 +11,7 @@ using CueApp.Core.Model;
 
 namespace CueApp.App.ViewModels;
 
-/// <summary>Проигрывание: GO, STOP, PANIC, играющие Audio-кью и их отсчет.</summary>
+/// <summary>Проигрывание: GO, STOP, PANIC, играющие треки и их отсчет.</summary>
 public partial class MainViewModel
 {
     /// <summary>Как часто обновлять отсчет на экране. Сам звук от этого не зависит.</summary>
@@ -20,11 +20,11 @@ public partial class MainViewModel
     private readonly DispatcherTimer _liveTimer;
 
     // Играющие кью и их звук
-    private readonly Dictionary<AudioCue, IAudioPlayback> _playing = new();
+    private readonly Dictionary<TrackCue, IAudioPlayback> _playing = new();
 
     // Длины файлов (сек) и файлы, которые не открылись
-    private readonly Dictionary<AudioCue, double> _fileDurations = new();
-    private readonly HashSet<AudioCue> _missingFiles = new();
+    private readonly Dictionary<TrackCue, double> _fileDurations = new();
+    private readonly HashSet<TrackCue> _missingFiles = new();
 
     [RelayCommand]
     private void Go()
@@ -47,10 +47,10 @@ public partial class MainViewModel
             return;
         }
 
-        if (started is AudioCue audio)
-            StartAudio(audio);
+        if (started is TrackCue track)
+            StartTrack(track);
         else
-            Status = "GO → " + Describe(started) + " (запуск этого типа кью — в следующем шаге)";
+            Status = "GO → " + Describe(started) + " (запуск Stop-кью — в следующем шаге)";
     }
 
     [RelayCommand]
@@ -69,11 +69,11 @@ public partial class MainViewModel
         Status = $"PANIC — всё гаснет за {Show.Settings.PanicFadeSeconds:0.#} с";
     }
 
-    private void StartAudio(AudioCue cue)
+    private void StartTrack(TrackCue cue)
     {
         if (!_audio.IsInitialized)
         {
-            Status = "Аудио недоступно — " + Describe(cue) + " не запущена";
+            Status = "Аудио недоступно — " + Describe(cue) + " не запущен";
             return;
         }
         if (cue.FilePath == "")
@@ -96,8 +96,6 @@ public partial class MainViewModel
                 FadeIn = cue.FadeIn,
                 FadeOut = cue.FadeOut,
                 VolumeDb = cue.VolumeDb,
-                PlayCount = cue.PlayCount,
-                LoopForever = cue.LoopForever,
             });
         }
         catch (Exception ex)
@@ -120,7 +118,7 @@ public partial class MainViewModel
         Status = "GO → " + Describe(cue);
     }
 
-    private void OnPlaybackFinished(AudioCue cue, IAudioPlayback playback)
+    private void OnPlaybackFinished(TrackCue cue, IAudioPlayback playback)
     {
         // Кью могли уже перезапустить — тогда в словаре другой звук, его не трогаем
         if (_playing.TryGetValue(cue, out var current) && current == playback)
@@ -135,7 +133,7 @@ public partial class MainViewModel
     /// <summary>Переносит состояние звука на строку: длительность, «нет файла», «играет», отсчет.</summary>
     private void ApplyPlaybackState(CueRowViewModel row)
     {
-        if (row.Cue is not AudioCue cue)
+        if (row.Cue is not TrackCue cue)
             return;
 
         row.FileDuration = _fileDurations.TryGetValue(cue, out double duration) ? duration : null;
@@ -144,17 +142,11 @@ public partial class MainViewModel
         row.LiveTime = _playing.TryGetValue(cue, out var playback) ? LiveTimeText(cue, playback) : null;
     }
 
-    /// <summary>«−0:21.0» — сколько осталось; «∞ 12:41.3» — сколько уже играет бесконечная петля.</summary>
-    private string LiveTimeText(AudioCue cue, IAudioPlayback playback)
-    {
-        if (!_fileDurations.TryGetValue(cue, out double fileDuration))
-            return "…";
-
-        double? remaining = AudioTiming.Remaining(cue, fileDuration, playback.Position, playback.CurrentPass);
-        return remaining is { } left
-            ? "−" + TimeFormat.MinSecTenths(left)
-            : "∞ " + TimeFormat.MinSecTenths(AudioTiming.Elapsed(cue, fileDuration, playback.Position, playback.CurrentPass));
-    }
+    /// <summary>«−0:21.0» — сколько осталось играть (с учетом trim).</summary>
+    private string LiveTimeText(TrackCue cue, IAudioPlayback playback) =>
+        _fileDurations.TryGetValue(cue, out double fileDuration)
+            ? "−" + TimeFormat.MinSecTenths(AudioTiming.Remaining(cue, fileDuration, playback.Position))
+            : "…";
 
     private DispatcherTimer CreateLiveTimer()
     {
@@ -171,7 +163,7 @@ public partial class MainViewModel
     /// <summary>
     /// Узнать длины аудиофайлов в фоне (чтение больших MP3 может занять время — интерфейс не ждет).
     /// </summary>
-    private void LoadDurations(IEnumerable<AudioCue> cues)
+    private void LoadDurations(IEnumerable<TrackCue> cues)
     {
         if (!_audio.IsInitialized)
             return;
@@ -202,6 +194,16 @@ public partial class MainViewModel
                 });
             });
         }
+    }
+
+    /// <summary>Файл кью сменили в инспекторе — забыть старую длину и узнать новую.</summary>
+    private void ReloadDuration(TrackCue cue)
+    {
+        _fileDurations.Remove(cue);
+        _missingFiles.Remove(cue);
+        if (_rowByCue.TryGetValue(cue, out var row))
+            ApplyPlaybackState(row);
+        LoadDurations([cue]);
     }
 
     /// <summary>Удалили кью (или группу) — ее звук гасим, чтобы не остался «невидимый» играющий.</summary>

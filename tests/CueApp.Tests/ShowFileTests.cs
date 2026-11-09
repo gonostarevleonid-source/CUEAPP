@@ -6,15 +6,12 @@ public class ShowFileTests
 {
     private static Show CreateSampleShow()
     {
-        var music = new AudioCue
+        var music = new TrackCue
         {
             Number = "1",
             Name = "Увертюра",
             Notes = "Ждать кивка дирижера",
-            Tags = { "акт 1" },
             Color = CueColor.Blue,
-            PreWait = 1.5,
-            Continue = ContinueMode.AutoFollow,
             FilePath = "audio/overture.wav",
             TrimIn = 2.25,
             TrimOut = 120,
@@ -22,23 +19,22 @@ public class ShowFileTests
             FadeOut = 3,
             VolumeDb = -6,
             Outputs = { "Main L/R", "Sub" },
-            PlayCount = 2,
         };
 
         return new Show
         {
             Name = "Тестовое шоу",
-            Settings = { BlockGoWhileTimelinePlaying = true, DoubleGoProtectionMs = 500 },
+            Settings = { BlockGoWhileTrackPlaying = true, DoubleGoProtectionMs = 500 },
             Cues =
             {
                 music,
-                new FadeCue { Number = "2", TargetCueId = music.Id, Duration = 4, TargetVolumeDb = -60, Curve = FadeCurve.SCurve },
+                new StopCue { Number = "2", TargetCueId = music.Id, FadeOut = 4 },
                 new GroupCue
                 {
                     Number = "3",
                     Children =
                     {
-                        new WaitCue { Number = "3.1", Duration = 2 },
+                        new TrackCue { Number = "3.1", FilePath = "audio/rain.wav" },
                         new StopCue { Number = "3.2", FadeOut = 1 },
                     },
                 },
@@ -56,20 +52,19 @@ public class ShowFileTests
         // Сравниваем через JSON: если что-то потерялось, строки не совпадут
         Assert.Equal(ShowFile.ToJson(original), ShowFile.ToJson(loaded));
 
-        var music = Assert.IsType<AudioCue>(loaded.Cues[0]);
+        var music = Assert.IsType<TrackCue>(loaded.Cues[0]);
         Assert.Equal("Увертюра", music.Name);
         Assert.Equal(120, music.TrimOut);
-        Assert.Equal(ContinueMode.AutoFollow, music.Continue);
 
-        var fade = Assert.IsType<FadeCue>(loaded.Cues[1]);
-        Assert.Equal(music.Id, fade.TargetCueId);
+        var stopOne = Assert.IsType<StopCue>(loaded.Cues[1]);
+        Assert.Equal(music.Id, stopOne.TargetCueId);
 
         var group = Assert.IsType<GroupCue>(loaded.Cues[2]);
-        Assert.IsType<WaitCue>(group.Children[0]);
-        var stop = Assert.IsType<StopCue>(group.Children[1]);
-        Assert.Null(stop.TargetCueId); // null = остановить все
+        Assert.IsType<TrackCue>(group.Children[0]);
+        var stopAll = Assert.IsType<StopCue>(group.Children[1]);
+        Assert.Null(stopAll.TargetCueId); // null = остановить все
 
-        Assert.True(loaded.Settings.BlockGoWhileTimelinePlaying);
+        Assert.True(loaded.Settings.BlockGoWhileTrackPlaying);
         Assert.Equal(500, loaded.Settings.DoubleGoProtectionMs);
     }
 
@@ -78,8 +73,7 @@ public class ShowFileTests
     {
         string json = ShowFile.ToJson(CreateSampleShow());
 
-        Assert.Contains("\"type\": \"audio\"", json);
-        Assert.Contains("\"continue\": \"autoFollow\"", json);
+        Assert.Contains("\"type\": \"track\"", json);
         Assert.Contains("\"color\": \"blue\"", json);
         Assert.Contains("Увертюра", json); // кириллица без \u-кодов
     }

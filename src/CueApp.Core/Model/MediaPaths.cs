@@ -29,12 +29,12 @@ public static class MediaPaths
     }
 
     /// <summary>
-    /// Шоу сохраняется в другую папку («Сохранить как…»): пересчитать пути всех Audio-кью,
+    /// Шоу сохраняется в другую папку («Сохранить как…»): пересчитать пути всех треков,
     /// чтобы они по-прежнему указывали на те же файлы. newShowDirectory = null — сделать пути полными.
     /// </summary>
     public static void Relocate(Show show, string? oldShowDirectory, string? newShowDirectory)
     {
-        foreach (var audio in show.AllCues().OfType<AudioCue>())
-            audio.FilePath = ToStored(Resolve(audio.FilePath, oldShowDirectory), newShowDirectory);
+        foreach (var track in show.AllCues().OfType<TrackCue>())
+            track.FilePath = ToStored(Resolve(track.FilePath, oldShowDirectory), newShowDirectory);
     }
 }

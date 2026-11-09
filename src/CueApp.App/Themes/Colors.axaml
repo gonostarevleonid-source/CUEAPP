@@ -26,12 +26,12 @@
     <Color x:Key="TimecodeColor">#3FC1E0</Color>
 
     <!-- Цвета типов кью -->
-    <Color x:Key="CueAudioColor">#2DD4BF</Color>
-    <Color x:Key="CueTimelineColor">#5EA2FF</Color>
-    <Color x:Key="CueFadeColor">#A78BFA</Color>
+    <Color x:Key="CueTrackColor">#5EA2FF</Color>
+    <Color x:Key="WaveformColor">#2DD4BF</Color>
     <Color x:Key="CueMidiColor">#F472B6</Color>
     <Color x:Key="CueOscColor">#4ADE80</Color>
-    <Color x:Key="CueDmxColor">#FACC15</Color>
+    <!-- Свет / grandMA: дорожка, маркеры, кнопка экспорта -->
+    <Color x:Key="LightColor">#FACC15</Color>
     <Color x:Key="CueStopColor">#FF8A8E</Color>
     <Color x:Key="CueGroupColor">#9A9CA3</Color>
 
@@ -72,12 +72,11 @@
     <SolidColorBrush x:Key="SubCueBackgroundBrush" Color="{StaticResource SubCueBackgroundColor}" />
     <SolidColorBrush x:Key="SubCueGuideBrush" Color="{StaticResource SubCueGuideColor}" />
 
-    <SolidColorBrush x:Key="CueAudioBrush" Color="{StaticResource CueAudioColor}" />
-    <SolidColorBrush x:Key="CueTimelineBrush" Color="{StaticResource CueTimelineColor}" />
-    <SolidColorBrush x:Key="CueFadeBrush" Color="{StaticResource CueFadeColor}" />
+    <SolidColorBrush x:Key="CueTrackBrush" Color="{StaticResource CueTrackColor}" />
+    <SolidColorBrush x:Key="WaveformBrush" Color="{StaticResource WaveformColor}" />
     <SolidColorBrush x:Key="CueMidiBrush" Color="{StaticResource CueMidiColor}" />
     <SolidColorBrush x:Key="CueOscBrush" Color="{StaticResource CueOscColor}" />
-    <SolidColorBrush x:Key="CueDmxBrush" Color="{StaticResource CueDmxColor}" />
+    <SolidColorBrush x:Key="LightBrush" Color="{StaticResource LightColor}" />
     <SolidColorBrush x:Key="CueStopBrush" Color="{StaticResource CueStopColor}" />
     <SolidColorBrush x:Key="CueGroupBrush" Color="{StaticResource CueGroupColor}" />
 

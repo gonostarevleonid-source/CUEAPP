@@ -10,8 +10,8 @@ public class CueEditingTests
     {
         var show = new Show();
 
-        show.InsertAfter(null, new WaitCue());
-        show.InsertAfter(null, new WaitCue());
+        show.InsertAfter(null, new StopCue());
+        show.InsertAfter(null, new StopCue());
 
         Assert.Equal(["1", "2"], show.Cues.Select(c => c.Number));
     }
@@ -20,10 +20,10 @@ public class CueEditingTests
     public void InsertAfter_InMiddle_TakenNumberStaysEmpty()
     {
         // 3 и 4 уже есть: новая после 3 не может стать «4» — номера закреплены
-        var three = new WaitCue { Number = "3" };
-        var four = new WaitCue { Number = "4" };
+        var three = new StopCue { Number = "3" };
+        var four = new StopCue { Number = "4" };
         var show = new Show { Cues = { three, four } };
-        var added = new WaitCue();
+        var added = new StopCue();
 
         show.InsertAfter(three, added);
 
@@ -35,10 +35,10 @@ public class CueEditingTests
     [Fact]
     public void InsertAfter_SubCue_StaysInGroupWithSubNumber()
     {
-        var sub = new WaitCue { Number = "4.1" };
+        var sub = new StopCue { Number = "4.1" };
         var group = new GroupCue { Number = "4", Children = { sub } };
         var show = new Show { Cues = { group } };
-        var added = new WaitCue();
+        var added = new StopCue();
 
         show.InsertAfter(sub, added);
 
@@ -49,9 +49,9 @@ public class CueEditingTests
     [Fact]
     public void InsertAfter_NonNumericPrevious_GivesEmptyNumber()
     {
-        var odd = new WaitCue { Number = "12a" };
+        var odd = new StopCue { Number = "12a" };
         var show = new Show { Cues = { odd } };
-        var added = new WaitCue();
+        var added = new StopCue();
 
         show.InsertAfter(odd, added);
 
@@ -61,10 +61,10 @@ public class CueEditingTests
     [Fact]
     public void Remove_DeletesGroupWithChildren_AndSubCueFromGroup()
     {
-        var sub1 = new WaitCue();
-        var sub2 = new WaitCue();
+        var sub1 = new StopCue();
+        var sub2 = new StopCue();
         var group = new GroupCue { Children = { sub1, sub2 } };
-        var other = new WaitCue();
+        var other = new StopCue();
         var show = new Show { Cues = { group, other } };
 
         Assert.True(show.Remove(sub1));

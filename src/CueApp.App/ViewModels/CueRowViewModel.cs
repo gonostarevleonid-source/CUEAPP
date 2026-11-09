@@ -36,7 +36,7 @@ public partial class CueRowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(RowBackground))]
     public partial bool IsPlaying { get; set; }
 
-    /// <summary>Длина аудиофайла, сек (null — еще не известна или это не Audio).</summary>
+    /// <summary>Длина аудиофайла, сек (null — еще не известна или это не трек).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Duration))]
     public partial double? FileDuration { get; set; }
@@ -46,12 +46,15 @@ public partial class CueRowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(Duration))]
     public partial bool IsMissingFile { get; set; }
 
-    /// <summary>Живой отсчет во время игры («−0:21.0», «∞ 12:41.3»); null — не играет.</summary>
+    /// <summary>Живой отсчет во время игры («−0:21.0»); null — не играет.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Duration))]
     public partial string? LiveTime { get; set; }
 
     public bool IsSubCue => Depth > 0;
+
+    /// <summary>Кью поменяли в инспекторе — перечитать все колонки строки.</summary>
+    public void Refresh() => OnPropertyChanged(string.Empty);
 
     public Thickness RowMargin => new(Depth * IndentPerLevel, 0, 0, 0);
 
@@ -61,47 +64,32 @@ public partial class CueRowViewModel : ViewModelBase
 
     public string Name => Cue.Name;
 
-    public string TypeLabel => Cue switch
+    public string TypeLabel => TypeLabelOf(Cue);
+
+    public static string TypeLabelOf(Cue cue) => cue switch
     {
-        AudioCue => "Audio",
-        FadeCue => "Fade",
+        TrackCue => "Трек",
         StopCue => "Stop",
-        WaitCue => "Wait",
         GroupCue => "Group",
         _ => "?",
     };
 
     public IBrush TypeBrush => ThemeBrushes.Get(Cue switch
     {
-        AudioCue => "CueAudioBrush",
-        FadeCue => "CueFadeBrush",
+        TrackCue => "CueTrackBrush",
         StopCue => "CueStopBrush",
-        _ => "CueGroupBrush", // Wait и Group — серые
+        _ => "CueGroupBrush",
     });
 
-    public string PreWait => TimeFormat.MinSecTenths(Cue.PreWait);
-
-    public string PostWait => TimeFormat.MinSecTenths(Cue.PostWait);
-
-    /// <summary>Колонка «Длит.»: во время игры — отсчет, иначе полная длительность с учетом trim и повторов.</summary>
+    /// <summary>Колонка «Длительность»: во время игры — отсчет «осталось», иначе длина с учетом trim.</summary>
     public string Duration => LiveTime ?? (IsMissingFile ? "нет файла" : StaticDuration);
 
     private string StaticDuration => Cue switch
     {
-        AudioCue { LoopForever: true } => "∞",
-        AudioCue audio when FileDuration is { } file =>
-            TimeFormat.MinSecTenths(AudioTiming.TotalLength(audio, file) ?? 0),
-        FadeCue fade => TimeFormat.MinSecTenths(fade.Duration),
+        TrackCue track when FileDuration is { } file => TimeFormat.MinSecTenths(AudioTiming.Length(track, file)),
         StopCue stop => TimeFormat.MinSecTenths(stop.FadeOut),
-        WaitCue wait => TimeFormat.MinSecTenths(wait.Duration),
         _ => NoValue,
     };
-
-    /// <summary>Значок ↓ — auto-continue (сразу).</summary>
-    public bool IsAutoContinue => Cue.Continue == ContinueMode.AutoContinue;
-
-    /// <summary>Значок ↓ с чертой — auto-follow (после окончания кью).</summary>
-    public bool IsAutoFollow => Cue.Continue == ContinueMode.AutoFollow;
 
     /// <summary>
     /// Заливка строки: играющая — синий фон; иначе цвет кью; иначе чуть более светлый фон подкью; иначе прозрачно.

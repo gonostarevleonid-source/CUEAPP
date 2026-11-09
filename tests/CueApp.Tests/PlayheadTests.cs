@@ -12,12 +12,12 @@ public class PlayheadTests
     //   4.1
     //   4.2
     // 5
-    private readonly WaitCue _c1 = new() { Number = "1" };
-    private readonly WaitCue _c2 = new() { Number = "2" };
-    private readonly WaitCue _c41 = new() { Number = "4.1" };
-    private readonly WaitCue _c42 = new() { Number = "4.2" };
+    private readonly TrackCue _c1 = new() { Number = "1" };
+    private readonly TrackCue _c2 = new() { Number = "2" };
+    private readonly TrackCue _c41 = new() { Number = "4.1" };
+    private readonly TrackCue _c42 = new() { Number = "4.2" };
     private readonly GroupCue _g4;
-    private readonly WaitCue _c5 = new() { Number = "5" };
+    private readonly TrackCue _c5 = new() { Number = "5" };
     private readonly Show _show;
 
     public PlayheadTests()
@@ -36,18 +36,8 @@ public class PlayheadTests
     }
 
     [Fact]
-    public void Go_OnGroup_RunsWholeGroup_AndSkipsSubCues()
+    public void Go_OnGroup_StartsNothing_AndEntersGroup()
     {
-        var playhead = new Playhead(_show) { Current = _g4 };
-
-        Assert.Same(_g4, playhead.Go());
-        Assert.Same(_c5, playhead.Current);
-    }
-
-    [Fact]
-    public void Go_OnGroup_EnterMode_StartsNothing_AndEntersGroup()
-    {
-        _show.Settings.GroupGo = GroupGoMode.EnterGroup;
         var playhead = new Playhead(_show) { Current = _g4 };
 
         Assert.Null(playhead.Go());
@@ -55,9 +45,8 @@ public class PlayheadTests
     }
 
     [Fact]
-    public void Go_OnEmptyGroup_EnterMode_MovesPastIt()
+    public void Go_OnEmptyGroup_MovesPastIt()
     {
-        _show.Settings.GroupGo = GroupGoMode.EnterGroup;
         _g4.Children.Clear();
         var playhead = new Playhead(_show) { Current = _g4 };
 
@@ -66,11 +55,11 @@ public class PlayheadTests
     }
 
     [Fact]
-    public void Go_OnSubCue_MovesToNextSubCue_ThenOutOfGroup()
+    public void Go_ThroughGroup_SubCuesOneByOne_ThenOutOfGroup()
     {
-        // Клик по подкью: GO запускает только ее
-        var playhead = new Playhead(_show) { Current = _c41 };
+        var playhead = new Playhead(_show) { Current = _g4 };
 
+        playhead.Go();
         Assert.Same(_c41, playhead.Go());
         Assert.Same(_c42, playhead.Current);
 
@@ -86,40 +75,6 @@ public class PlayheadTests
         Assert.Same(_c5, playhead.Go());
         Assert.Null(playhead.Current);
         Assert.Null(playhead.Go());
-    }
-
-    [Fact]
-    public void Go_SkipsContinueChain()
-    {
-        // 1 (auto-continue) → 2 (auto-follow) → группа 4 запустятся сами, плейхед встает на 5
-        _c1.Continue = ContinueMode.AutoContinue;
-        _c2.Continue = ContinueMode.AutoFollow;
-        var playhead = new Playhead(_show) { Current = _c1 };
-
-        Assert.Same(_c1, playhead.Go());
-        Assert.Same(_c5, playhead.Current);
-    }
-
-    [Fact]
-    public void Go_ContinueChainInsideGroup_StopsAtGroupEnd()
-    {
-        // 4.1 auto-continue → 4.2 стартует сама; дальше — выход из группы на 5
-        _c41.Continue = ContinueMode.AutoContinue;
-        var playhead = new Playhead(_show) { Current = _c41 };
-
-        Assert.Same(_c41, playhead.Go());
-        Assert.Same(_c5, playhead.Current);
-    }
-
-    [Fact]
-    public void Go_LastCueWithContinue_LeavesNothingSelected()
-    {
-        _c5.Continue = ContinueMode.AutoContinue;
-        var playhead = new Playhead(_show) { Current = _c5 };
-
-        playhead.Go();
-
-        Assert.Null(playhead.Current);
     }
 }
 

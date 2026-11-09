@@ -32,14 +32,10 @@ public sealed record AudioPlayRequest(string FilePath)
 
     public double FadeIn { get; init; }
 
-    /// <summary>Фейд в конце последнего прохода.</summary>
+    /// <summary>Фейд в конце (заканчивается ровно на trim out).</summary>
     public double FadeOut { get; init; }
 
     public double VolumeDb { get; init; }
-
-    public int PlayCount { get; init; } = 1;
-
-    public bool LoopForever { get; init; }
 }
 
 /// <summary>Один играющий звук.</summary>
@@ -47,9 +43,6 @@ public interface IAudioPlayback
 {
     /// <summary>Текущая (слышимая) позиция во времени файла, сек.</summary>
     double Position { get; }
-
-    /// <summary>Номер прохода: 1, 2, 3…</summary>
-    int CurrentPass { get; }
 
     bool IsFinished { get; }
 

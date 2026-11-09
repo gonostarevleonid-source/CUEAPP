@@ -1,9 +1,12 @@
 namespace CueApp.Core.Model;
 
-/// <summary>Проигрывание аудиофайла.</summary>
-public sealed class AudioCue : Cue
+/// <summary>
+/// Трек: аудиофайл, который играет один раз — от GO до конца (или до Stop).
+/// Позже у трека появятся таймлайн с маркерами и таймкод.
+/// </summary>
+public sealed class TrackCue : Cue
 {
-    /// <summary>Путь к файлу (лучше относительный от папки шоу).</summary>
+    /// <summary>Путь к файлу (относительно папки шоу, через «/»).</summary>
     public string FilePath { get; set; } = "";
 
     /// <summary>Начало проигрывания во времени файла.</summary>
@@ -21,32 +24,6 @@ public sealed class AudioCue : Cue
 
     /// <summary>Имена выходов из таблицы выходов проекта («Main L/R», «Sub»...).</summary>
     public List<string> Outputs { get; set; } = new();
-
-    /// <summary>Сколько раз проиграть (1, 2, 3...). Игнорируется, если LoopForever.</summary>
-    public int PlayCount { get; set; } = 1;
-
-    /// <summary>Повторять бесконечно (∞).</summary>
-    public bool LoopForever { get; set; }
-}
-
-/// <summary>Плавное изменение громкости другой кью.</summary>
-public sealed class FadeCue : Cue
-{
-    /// <summary>Id целевой кью; null — цель не выбрана.</summary>
-    public Guid? TargetCueId { get; set; }
-
-    public double Duration { get; set; } = 3;
-
-    /// <summary>До какой громкости фейдить, дБ.</summary>
-    public double TargetVolumeDb { get; set; }
-
-    public FadeCurve Curve { get; set; } = FadeCurve.Linear;
-}
-
-public enum FadeCurve
-{
-    Linear,
-    SCurve,
 }
 
 /// <summary>Остановка одной кью или всех.</summary>
@@ -58,13 +35,7 @@ public sealed class StopCue : Cue
     public double FadeOut { get; set; }
 }
 
-/// <summary>Пауза.</summary>
-public sealed class WaitCue : Cue
-{
-    public double Duration { get; set; } = 5;
-}
-
-/// <summary>Группа подкью (4 → 4.1, 4.2...).</summary>
+/// <summary>Группа (1 → 1.1, 1.2…) для структуры шоу: блоки, акты.</summary>
 public sealed class GroupCue : Cue
 {
     public List<Cue> Children { get; set; } = new();
